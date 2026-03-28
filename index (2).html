@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0209">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Roots & Records — African American Genealogy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;font-size:16px;}
+body{
+  min-height:100%;
+  background:#0d0209;
+  color:#f2e8d6;
+  font-family:'Lato',sans-serif;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  overflow-x:hidden;
+  overflow-y:auto;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ═══════════════════════════════════════
+   BACKGROUND
+═══════════════════════════════════════ */
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 120% 50% at 50% 108%, rgba(92,21,48,.75) 0%, transparent 58%),
+    radial-gradient(ellipse 80% 45% at 15% 15%, rgba(50,8,24,.5) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 40% at 85% 8%, rgba(40,6,18,.4) 0%, transparent 60%),
+    linear-gradient(175deg,#080106 0%,#120410 45%,#080106 100%);
+  pointer-events:none;
+}
+/* stars */
+.stars{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, rgba(212,168,67,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 78% 12%, rgba(212,168,67,.25) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 48% 5%, rgba(242,232,214,.22) 0%,transparent 100%),
+    radial-gradient(1px 1px at 90% 30%, rgba(212,168,67,.2) 0%,transparent 100%),
+    radial-gradient(1px 1px at 6% 52%, rgba(212,168,67,.18) 0%,transparent 100%),
+    radial-gradient(1px 1px at 60% 8%, rgba(212,168,67,.2) 0%,transparent 100%),
+    radial-gradient(1.2px 1.2px at 32% 10%, rgba(212,168,67,.22) 0%,transparent 100%),
+    radial-gradient(1px 1px at 95% 65%, rgba(212,168,67,.15) 0%,transparent 100%),
+    radial-gradient(1px 1px at 23% 72%, rgba(212,168,67,.12) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 92%, rgba(212,168,67,.1) 0%,transparent 100%);
+}
+
+/* ═══════════════════════════════════════
+   WRAP
+═══════════════════════════════════════ */
+.wrap{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;max-width:420px;
+  padding:24px 20px 48px;
+  text-align:center;
+  min-height:100vh;
+  justify-content:center;
+}
+@media(max-height:750px){
+  .wrap{justify-content:flex-start;padding-top:16px;min-height:auto;}
+}
+
+/* ═══════════════════════════════════════
+   TREE  —  Canvas-rendered, much better
+═══════════════════════════════════════ */
+#treeCanvas{
+  display:block;
+  width:min(300px, 82vw);
+  height:min(280px, 76vw);
+  margin:0 auto 4px;
+  flex-shrink:0;
+}
+@media(max-height:700px){
+  #treeCanvas{height:min(180px,48vw)!important;width:min(200px,55vw)!important;}
+}
+@media(max-height:580px){
+  #treeCanvas{display:none;}
+}
+
+/* ═══════════════════════════════════════
+   TITLE
+═══════════════════════════════════════ */
+.title-wrap{
+  opacity:1;
+  margin-bottom:16px;
+  padding:0 8px;
+  transition:opacity .6s ease, transform .6s ease;
+}
+.title-wrap.hidden{opacity:0;transform:translateY(10px);}
+@keyframes riseUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.main-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.9rem,6.5vw,2.8rem);
+  font-weight:900;line-height:1.05;
+  letter-spacing:-.01em;
+}
+.gold{color:#d4a843;}
+em.amp{font-style:italic;color:rgba(242,232,214,.65);}
+.sub-title{
+  font-size:clamp(9px,2.5vw,11px);letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(212,168,67,.5);font-weight:700;margin-top:8px;
+}
+
+/* ═══════════════════════════════════════
+   PANELS  (login / change-pw)
+═══════════════════════════════════════ */
+.panel{
+  width:100%;max-width:340px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(212,168,67,.22);
+  border-radius:14px;
+  padding:22px 22px 18px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 28px 64px rgba(0,0,0,.6);
+  opacity:1;
+  transition:opacity .6s ease, transform .6s ease;
+}
+.panel.hidden{opacity:0;pointer-events:none;transform:translateY(10px);}
+.panel.shown{opacity:1;pointer-events:all;transform:translateY(0);animation:none;}
+.panel-title{
+  font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;
+  color:#f2e8d6;margin-bottom:14px;text-align:left;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title .ico{font-size:1.1rem;}
+
+/* ── form fields ── */
+.frow{margin-bottom:11px;}
+.flbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,67,.6);font-weight:700;display:block;margin-bottom:5px;text-align:left;}
+.fwrap{position:relative;}
+.fin{
+  width:100%;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(212,168,67,.26);
+  color:#f2e8d6;border-radius:8px;
+  padding:12px 42px 12px 14px;
+  font-family:'Lato',sans-serif;font-size:16px;
+  letter-spacing:.04em;transition:all .2s;
+  -webkit-appearance:none;appearance:none;
+  touch-action:manipulation;
+}
+.fin::placeholder{color:rgba(242,232,214,.28);letter-spacing:.02em;}
+.fin:focus{
+  outline:none;border-color:rgba(212,168,67,.65);
+  background:rgba(255,255,255,.12);
+  box-shadow:0 0 0 3px rgba(212,168,67,.12);
+}
+.eye-btn{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  font-size:15px;color:rgba(242,232,214,.35);padding:0;
+  transition:color .2s;line-height:1;
+  touch-action:manipulation;
+  min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+}
+.eye-btn:hover{color:rgba(212,168,67,.85);}
+
+/* hint text below field */
+.hint-text{
+  font-size:11px;color:rgba(212,168,67,.5);
+  text-align:left;margin-top:4px;font-style:italic;
+}
+
+/* ── buttons ── */
+.btn-gold{
+  width:100%;background:linear-gradient(135deg,#8a6820,#d4a843);
+  color:#140510;border:none;border-radius:8px;
+  padding:13px;font-family:'Lato',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .25s;letter-spacing:.04em;
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  min-height:44px;
+}
+.btn-gold:hover{background:linear-gradient(135deg,#c49030,#e8c060);transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,168,67,.3);}
+.btn-gold:active{transform:translateY(0);}
+
+.btn-ghost{
+  width:100%;background:transparent;
+  color:rgba(212,168,67,.6);border:1px solid rgba(212,168,67,.22);
+  border-radius:8px;padding:10px;
+  font-family:'Lato',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .2s;letter-spacing:.04em;margin-top:8px;
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  min-height:44px;
+}
+.btn-ghost:hover{border-color:rgba(212,168,67,.5);color:#d4a843;background:rgba(212,168,67,.06);}
+
+/* ── messages ── */
+.msg{
+  font-size:12px;text-align:center;padding:8px 10px;
+  border-radius:6px;margin-top:10px;display:none;
+}
+.msg.err{background:rgba(200,60,60,.1);border:1px solid rgba(200,60,60,.22);color:#e07070;}
+.msg.ok{background:rgba(50,140,70,.12);border:1px solid rgba(50,140,70,.25);color:#6ac488;}
+.msg.show{display:block;}
+
+.footer-lnk{
+  font-size:11px;color:rgba(212,168,67,.55);
+  text-align:center;margin-top:6px;cursor:pointer;
+  transition:color .2s;text-decoration:underline;text-underline-offset:3px;
+  touch-action:manipulation;
+  padding:8px 0;
+  display:block;
+  min-height:36px;
+  display:flex;align-items:center;justify-content:center;
+}
+.footer-lnk:hover{color:#d4a843;}
+
+/* ── divider ── */
+.divider{
+  display:flex;align-items:center;gap:10px;margin:14px 0 10px;
+}
+.divider-line{flex:1;height:1px;background:rgba(212,168,67,.12);}
+.divider-text{font-size:10px;color:rgba(212,168,67,.35);letter-spacing:.1em;text-transform:uppercase;}
+
+/* ── strength bar ── */
+.strength-wrap{margin-top:5px;}
+.strength-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.strength-fill{height:100%;width:0%;border-radius:2px;transition:all .3s;}
+.strength-lbl{font-size:10px;color:rgba(212,168,67,.45);margin-top:3px;text-align:right;}
+
+/* shake */
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-8px);}
+  40%{transform:translateX(8px);}
+  60%{transform:translateX(-5px);}
+  80%{transform:translateX(5px);}
+}
+.shake{animation:shake .38s ease-out!important;}
+
+/* ═══════════════════════════════════════
+   LOGOUT BUTTON  (shown in dashboard)
+═══════════════════════════════════════ */
+#logoutBtn{
+  display:none;
+  position:fixed;top:12px;right:12px;z-index:9999;
+  background:rgba(92,21,48,.9);
+  border:1px solid rgba(212,168,67,.3);
+  color:rgba(212,168,67,.85);
+  border-radius:7px;padding:7px 14px;
+  font-family:'Lato',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  backdrop-filter:blur(8px);
+}
+#logoutBtn:hover{background:rgba(130,30,60,.95);color:#d4a843;border-color:rgba(212,168,67,.6);}
+
+/* ═══════════════════════════════════════
+   MOBILE TWEAKS — COMPLETE
+═══════════════════════════════════════ */
+
+/* Small phones */
+@media(max-width:400px){
+  .wrap{padding:12px 14px 32px;}
+  .panel{padding:16px 14px 12px;}
+  .fin{font-size:16px;}
+  .main-title{font-size:1.7rem;}
+}
+
+/* Short screens — shrink tree, tighten spacing */
+@media(max-height:750px){
+  .wrap{justify-content:flex-start;padding-top:12px;}
+  .title-wrap{margin-bottom:12px;}
+}
+@media(max-height:680px){
+  #treeCanvas{height:min(200px,52vw)!important;}
+  .title-wrap{margin-bottom:10px;}
+  .panel{padding:16px 18px 12px;}
+  .frow{margin-bottom:8px;}
+}
+@media(max-height:600px){
+  #treeCanvas{height:min(150px,40vw)!important;width:min(160px,44vw)!important;}
+  .main-title{font-size:1.5rem;}
+  .sub-title{display:none;}
+  .divider{margin:8px 0 6px;}
+}
+
+/* Very short — hide tree completely */
+@media(max-height:520px){
+  #treeCanvas{display:none;}
+  .title-wrap{margin-bottom:10px;}
+}
+
+/* Landscape phones */
+@media(max-height:450px){
+  #treeCanvas{display:none;}
+  .wrap{padding:10px 16px 20px;flex-direction:row;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start;max-width:700px;}
+  .title-wrap{flex:1;min-width:200px;text-align:left;margin-bottom:0;padding-top:8px;}
+  .panel{flex:1;min-width:280px;max-width:320px;}
+}
+
+/* Notch/island iPhones — safe areas */
+@supports(padding:max(0px)){
+  body{
+    padding-top:max(env(safe-area-inset-top), 12px);
+    padding-bottom:max(env(safe-area-inset-bottom), 16px);
+    padding-left:max(env(safe-area-inset-left), 0px);
+    padding-right:max(env(safe-area-inset-right), 0px);
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="stars"></div>
+
+<div class="wrap">
+
+  <!-- ══ TREE CANVAS ══ -->
+  <canvas id="treeCanvas"></canvas>
+
+  <!-- ══ TITLE ══ -->
+  <div class="title-wrap" id="titleWrap">
+    <div class="main-title">
+      <span class="gold">Roots</span> <em class="amp">&amp;</em> <span class="gold">Records</span>
+    </div>
+    <div class="sub-title">African American Genealogy Dashboard</div>
+  </div>
+
+  <!-- ══ LOGIN PANEL ══ -->
+  <div class="panel shown" id="loginPanel">
+    <div class="panel-title"><span class="ico">🔐</span> Private Access</div>
+
+    <div class="frow">
+      <label class="flbl">Password</label>
+      <div class="fwrap">
+        <input type="password" class="fin" id="pwIn" placeholder="Enter password…"
+          onkeydown="if(event.key==='Enter')doLogin()"
+          autocomplete="current-password">
+        <button class="eye-btn" onclick="toggleEye('pwIn','eyeIco')" id="eyeIco">👁</button>
+      </div>
+    </div>
+
+    <button class="btn-gold" onclick="doLogin()">Enter Dashboard →</button>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">options</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="footer-lnk" onclick="showPanel('hintPanel')">💡 Show Password Hint</div>
+    <div class="footer-lnk" onclick="showPanel('changePwPanel')">🔑 Change Password</div>
+
+    <div class="msg err" id="loginErr">Incorrect password. Please try again.</div>
+  </div>
+
+  <!-- ══ HINT PANEL ══ -->
+  <div class="panel hidden" id="hintPanel" style="display:none;">
+    <div class="panel-title"><span class="ico">💡</span> Password Hint</div>
+
+    <div id="hintDisplay" style="font-size:14px;color:#f2e8d6;text-align:left;padding:10px 14px;background:rgba(212,168,67,.08);border-radius:8px;border:1px solid rgba(212,168,67,.18);margin-bottom:12px;min-height:44px;font-style:italic;">
+      No hint set yet. Add one via Change Password.
+    </div>
+
+    <button class="btn-gold" onclick="showPanel('loginPanel')">← Back to Login</button>
+    <div class="footer-lnk" onclick="showPanel('changePwPanel')">🔑 Update Hint / Change Password</div>
+  </div>
+
+  <!-- ══ CHANGE PASSWORD PANEL ══ -->
+  <div class="panel hidden" id="changePwPanel" style="display:none;">
+    <div class="panel-title"><span class="ico">🔑</span> Change Password</div>
+
+    <div class="frow">
+      <label class="flbl">Current Password</label>
+      <div class="fwrap">
+        <input type="password" class="fin" id="curPw" placeholder="Current password…" autocomplete="current-password">
+        <button class="eye-btn" onclick="toggleEye('curPw','eyeCur')" id="eyeCur">👁</button>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label class="flbl">New Password</label>
+      <div class="fwrap">
+        <input type="password" class="fin" id="newPw" placeholder="New password…"
+          oninput="checkStrength(this.value)" autocomplete="new-password">
+        <button class="eye-btn" onclick="toggleEye('newPw','eyeNew')" id="eyeNew">👁</button>
+      </div>
+      <div class="strength-wrap">
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-lbl" id="strengthLbl"></div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label class="flbl">Confirm New Password</label>
+      <div class="fwrap">
+        <input type="password" class="fin" id="confPw" placeholder="Repeat new password…" autocomplete="new-password">
+        <button class="eye-btn" onclick="toggleEye('confPw','eyeConf')" id="eyeConf">👁</button>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label class="flbl">Password Hint <span style="color:rgba(212,168,67,.4);font-weight:400;text-transform:none;letter-spacing:0;">(shown on hint screen — don't make it too obvious)</span></label>
+      <input type="text" class="fin" id="hintIn" placeholder="e.g. Grandma's favorite flower…" autocomplete="off">
+    </div>
+
+    <button class="btn-gold" onclick="doChangePw()">Save New Password</button>
+    <button class="btn-ghost" onclick="showPanel('loginPanel')">← Back to Login</button>
+
+    <div class="msg err" id="changePwErr"></div>
+    <div class="msg ok"  id="changePwOk">✓ Password updated successfully!</div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- LOGOUT BUTTON (injected into dashboard page via postMessage or direct) -->
+<script>
+/* ════════════════════════════════════════
+   STORAGE KEY & DEFAULT PASSWORD
+   Change default password here if needed
+════════════════════════════════════════ */
+const STORE_KEY = 'rr_pw';
+const HINT_KEY  = 'rr_hint';
+const DEFAULT_PW = 'roots2025';
+
+function getStoredPw(){ return localStorage.getItem(STORE_KEY) || DEFAULT_PW; }
+function getStoredHint(){ return localStorage.getItem(HINT_KEY) || ''; }
+
+/* ════════════════════════════════════════
+   PANEL SWITCHER
+════════════════════════════════════════ */
+function showPanel(id){
+  ['loginPanel','hintPanel','changePwPanel'].forEach(p=>{
+    const el=document.getElementById(p);
+    if(!el) return;
+    if(p===id){
+      el.style.display='block';
+      void el.offsetWidth;
+      el.classList.remove('hidden');
+      el.classList.add('shown');
+    } else {
+      el.classList.remove('shown');
+      el.classList.add('hidden');
+      setTimeout(()=>{ if(el.classList.contains('hidden')) el.style.display='none'; }, 350);
+    }
+  });
+  if(id==='hintPanel'){
+    const h=getStoredHint();
+    document.getElementById('hintDisplay').textContent = h || 'No hint set yet. Add one via Change Password.';
+  }
+  if(id==='changePwPanel'){
+    ['curPw','newPw','confPw','hintIn'].forEach(f=>{ const el=document.getElementById(f); if(el)el.value=''; });
+    document.getElementById('changePwErr').classList.remove('show');
+    document.getElementById('changePwOk').classList.remove('show');
+    document.getElementById('strengthFill').style.width='0%';
+    document.getElementById('strengthLbl').textContent='';
+    const h=getStoredHint(); if(h) document.getElementById('hintIn').value=h;
+  }
+  if(id==='loginPanel'){
+    setTimeout(()=>{ const el=document.getElementById('pwIn'); if(el) el.focus(); }, 100);
+  }
+}
+
+/* ════════════════════════════════════════
+   REVEAL UI  — called after tree finishes
+════════════════════════════════════════ */
+function revealUI(){
+  // Panel is already visible — just focus the password field
+  const el=document.getElementById('pwIn');
+  if(el) el.focus();
+}
+
+/* ════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════ */
+function doLogin(){
+  const val = document.getElementById('pwIn').value;
+  const panel = document.getElementById('loginPanel');
+  const err   = document.getElementById('loginErr');
+  const btn   = panel.querySelector('.btn-gold');
+
+  if(val === getStoredPw()){
+    btn.textContent = '✓ Welcome…';
+    btn.style.background = 'linear-gradient(135deg,#2d6b3a,#4a9458)';
+    btn.style.color = '#fff';
+    // Store session flag
+    sessionStorage.setItem('rr_auth','1');
+    setTimeout(()=>{ window.location.href = 'roots-and-records-v4.html'; }, 680);
+  } else {
+    err.classList.add('show');
+    panel.classList.remove('shake');
+    void panel.offsetWidth;
+    panel.classList.add('shake');
+    document.getElementById('pwIn').value = '';
+    document.getElementById('pwIn').focus();
+    setTimeout(()=>{ err.classList.remove('show'); panel.classList.remove('shake'); }, 3200);
+  }
+}
+
+/* ════════════════════════════════════════
+   CHANGE PASSWORD
+════════════════════════════════════════ */
+function doChangePw(){
+  const cur  = document.getElementById('curPw').value;
+  const nw   = document.getElementById('newPw').value;
+  const conf = document.getElementById('confPw').value;
+  const hint = document.getElementById('hintIn').value.trim();
+  const err  = document.getElementById('changePwErr');
+  const ok   = document.getElementById('changePwOk');
+
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  if(cur !== getStoredPw()){
+    err.textContent = 'Current password is incorrect.'; err.classList.add('show'); return;
+  }
+  if(nw.length < 6){
+    err.textContent = 'New password must be at least 6 characters.'; err.classList.add('show'); return;
+  }
+  if(nw !== conf){
+    err.textContent = 'New passwords do not match.'; err.classList.add('show'); return;
+  }
+
+  localStorage.setItem(STORE_KEY, nw);
+  if(hint) localStorage.setItem(HINT_KEY, hint);
+  ok.classList.add('show');
+
+  setTimeout(()=>{
+    ok.classList.remove('show');
+    showPanel('loginPanel');
+    document.getElementById('pwIn').focus();
+  }, 2000);
+}
+
+/* ════════════════════════════════════════
+   PASSWORD STRENGTH
+════════════════════════════════════════ */
+function checkStrength(val){
+  const fill = document.getElementById('strengthFill');
+  const lbl  = document.getElementById('strengthLbl');
+  if(!val){ fill.style.width='0%'; lbl.textContent=''; return; }
+  let score=0;
+  if(val.length>=6)  score++;
+  if(val.length>=10) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^a-zA-Z0-9]/.test(val)) score++;
+  const configs=[
+    {w:'20%',c:'#e06060',t:'Weak'},
+    {w:'40%',c:'#e08040',t:'Fair'},
+    {w:'60%',c:'#c8a830',t:'Good'},
+    {w:'80%',c:'#80b840',t:'Strong'},
+    {w:'100%',c:'#4a9458',t:'Very Strong'},
+  ];
+  const cfg=configs[Math.min(score,4)];
+  fill.style.width=cfg.w; fill.style.background=cfg.c; lbl.textContent=cfg.t;
+  lbl.style.color=cfg.c;
+}
+
+/* ════════════════════════════════════════
+   TOGGLE EYE
+════════════════════════════════════════ */
+function toggleEye(inputId, btnId){
+  const inp=document.getElementById(inputId);
+  const btn=document.getElementById(btnId);
+  if(inp.type==='password'){inp.type='text'; btn.textContent='🙈';}
+  else{inp.type='password'; btn.textContent='👁';}
+}
+
+/* ════════════════════════════════════════
+   LOGOUT
+════════════════════════════════════════ */
+function logout(){
+  sessionStorage.removeItem('rr_auth');
+  window.location.href = 'index.html';
+}
+window.rrLogout = logout;
+
+// Focus password field immediately on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  const el = document.getElementById('pwIn');
+  if(el) el.focus();
+});</script>
+
+<!-- ════════════════════════════════════════
+     TREE — drawn with Canvas for quality
+════════════════════════════════════════ -->
+<script>
+(function(){
+
+const canvas = document.getElementById('treeCanvas');
+// Responsive sizing
+function setSize(){
+  const w = Math.min(300, window.innerWidth * 0.82);
+  canvas.width  = Math.round(w * window.devicePixelRatio);
+  canvas.height = Math.round(w * (280/300) * window.devicePixelRatio);
+  canvas.style.width  = Math.round(w)+'px';
+  canvas.style.height = Math.round(w*(280/300))+'px';
+}
+setSize();
+window.addEventListener('resize', ()=>{ setSize(); resetAndDraw(); });
+
+const ctx = canvas.getContext('2d');
+let frame = 0;
+let raf;
+let phase = 0; // 0=roots, 1=trunk, 2=branches, 3=leaves, 4=sway
+let sway = 0;
+let swayDir = 1;
+
+// Virtual coordinate space: 300 x 280
+// Scale everything to canvas.width
+function sc(v){ return v * canvas.width / 300; }
+
+const GROUND_Y = sc(200);
+const CX = sc(150); // center x
+
+/* ─ colors ─ */
+const BARK_DARK  = '#4a1c0c';
+const BARK_MID   = '#6b2c18';
+const BARK_LIGHT = '#8a3c24';
+const ROOT_DARK  = '#7a1f3d';
+const ROOT_MID   = '#9e2850';
+const LEAF_DARK  = '#1e5228';
+const LEAF_MID   = '#2d7038';
+const LEAF_BRIGHT= '#3a8a48';
+const LEAF_LIGHT = '#52a060';
+const GOLD_COLOR = '#d4a843';
+
+/* ─ progress values 0→1 ─ */
+let rootP  = 0;
+let trunkP = 0;
+let branchP= 0;
+let leafP  = 0;
+let glowP  = 0;
+
+function ease(t){ return t<.5 ? 2*t*t : -1+(4-2*t)*t; }
+function lerp(a,b,t){ return a+(b-a)*t; }
+function clamp01(v){ return Math.max(0,Math.min(1,v)); }
+
+/* ─── DRAW FUNCTIONS ─── */
+
+function drawBackground(){
+  // night sky gradient behind tree
+  const grad = ctx.createRadialGradient(CX, sc(230), sc(10), CX, sc(230), sc(180));
+  grad.addColorStop(0, 'rgba(92,21,48,0.35)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+
+function drawGround(p){
+  if(p<=0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  // soil ellipse
+  const gr = ctx.createRadialGradient(CX, sc(204), sc(2), CX, sc(204), sc(60));
+  gr.addColorStop(0,'rgba(139,36,72,0.4)');
+  gr.addColorStop(1,'rgba(107,26,56,0)');
+  ctx.fillStyle = gr;
+  ctx.beginPath();
+  ctx.ellipse(CX, sc(204), sc(58), sc(8), 0, 0, Math.PI*2);
+  ctx.fill();
+  // thin horizon line
+  ctx.strokeStyle = 'rgba(212,168,67,0.18)';
+  ctx.lineWidth = sc(0.6);
+  ctx.beginPath();
+  ctx.moveTo(sc(40), GROUND_Y); ctx.lineTo(sc(260), GROUND_Y);
+  ctx.stroke();
+  // soil dots
+  const dots=[{x:98,y:218,r:2.2},{x:172,y:226,r:1.8},{x:128,y:238,r:1.5},{x:192,y:214,r:1.3},{x:112,y:232,r:1.1},{x:158,y:242,r:.9}];
+  dots.forEach(d=>{
+    ctx.fillStyle='rgba(139,36,72,0.45)';
+    ctx.beginPath();ctx.arc(sc(d.x),sc(d.y),sc(d.r),0,Math.PI*2);ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawCurve(x1,y1,cx1,cy1,cx2,cy2,x2,y2, p, lineW, color, alpha){
+  if(p<=0||alpha<=0) return;
+  ctx.save();
+  // draw partial bezier by sampling
+  ctx.beginPath();
+  const steps = 40;
+  let started = false;
+  for(let i=0;i<=steps*p;i++){
+    const t = i/steps;
+    const mt=1-t;
+    const x = mt*mt*mt*x1 + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*x2;
+    const y = mt*mt*mt*y1 + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*y2;
+    if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = lineW;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawLine(x1,y1,x2,y2, p, lineW, color, alpha){
+  if(p<=0||alpha<=0)return;
+  ctx.save();
+  const nx = lerp(x1,x2,p), ny = lerp(y1,y2,p);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(nx,ny);
+  ctx.strokeStyle=color; ctx.globalAlpha=alpha;
+  ctx.lineWidth=lineW; ctx.lineCap='round';
+  ctx.stroke(); ctx.restore();
+}
+
+function drawRoots(p){
+  if(p<=0)return;
+  // 8 graceful root curves spreading underground
+  const roots=[
+    // [x1,y1, cx1,cy1, cx2,cy2, x2,y2, maxW, color, startP, endP]
+    [150,200, 146,218, 130,236, 112,252,  3.8, ROOT_DARK,  0.0, 0.75],
+    [150,200, 154,218, 170,236, 188,252,  3.4, ROOT_MID,   0.0, 0.75],
+    [148,202, 138,220, 118,234, 94,246,   3.0, ROOT_DARK,  0.1, 0.8],
+    [152,202, 162,220, 182,234, 206,246,  2.6, ROOT_MID,   0.1, 0.8],
+    [147,204, 134,224, 108,238, 80,252,   2.2, ROOT_DARK,  0.2, 0.85],
+    [153,204, 166,224, 192,238, 220,252,  2.0, ROOT_MID,   0.2, 0.85],
+    [148,206, 136,228, 104,244, 68,260,   1.5, ROOT_DARK,  0.3, 0.9],
+    [152,206, 164,228, 196,244, 232,260,  1.3, ROOT_MID,   0.3, 0.9],
+  ];
+  roots.forEach(([x1,y1,cx1,cy1,cx2,cy2,x2,y2,w,c,s,e])=>{
+    const lp = clamp01((p-s)/(e-s));
+    drawCurve(sc(x1),sc(y1),sc(cx1),sc(cy1),sc(cx2),sc(cy2),sc(x2),sc(y2), ease(lp), sc(w), c, Math.min(lp*2,0.82));
+  });
+  // small root tendrils
+  const tendrils=[
+    [112,252, 106,262, 96,270, 0.35, 0.7, 1.0, ROOT_DARK],
+    [188,252, 194,262, 204,270, 0.35, 0.7, 1.0, ROOT_MID],
+    [94,246, 84,258, 72,266, 0.45, 0.75, 0.9, ROOT_DARK],
+    [206,246, 216,258, 228,266, 0.45, 0.75, 0.9, ROOT_MID],
+  ];
+  tendrils.forEach(([x1,y1,x2,y2,s,e,a,c])=>{
+    const lp=clamp01((p-s)/(e-s));
+    drawLine(sc(x1),sc(y1),sc(x2),sc(y2), ease(lp), sc(1.0), c, a*lp*0.7);
+  });
+}
+
+function drawTrunk(p){
+  if(p<=0)return;
+  // Three-layer trunk: shadow, main, highlight
+  // Trunk grows from GROUND_Y up to top
+  const tx=sc(150);
+  const ty0=sc(200), ty1=sc(30);
+  // current top based on p
+  const curTop = lerp(ty0, ty1, ease(p));
+  // draw as tapered path
+  const taper = sc(6)*(1-ease(p)*0.5);
+
+  // Shadow layer
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx-sc(7), ty0);
+  ctx.quadraticCurveTo(tx-sc(8)+sc(sway*0.4), lerp(ty0,curTop,.5), tx-sc(3)+sc(sway*0.8), curTop);
+  ctx.quadraticCurveTo(tx+sc(sway*0.8), curTop+sc(2), tx+sc(2)+sc(sway*0.8), curTop);
+  ctx.quadraticCurveTo(tx+sc(8)+sc(sway*0.4), lerp(ty0,curTop,.5), tx+sc(7), ty0);
+  ctx.closePath();
+  ctx.fillStyle = BARK_DARK;
+  ctx.globalAlpha = ease(p)*0.92;
+  ctx.fill();
+  ctx.restore();
+
+  // Mid layer
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx-sc(4), ty0);
+  ctx.quadraticCurveTo(tx-sc(4)+sc(sway*0.4), lerp(ty0,curTop,.5), tx-sc(1.5)+sc(sway*0.8), curTop);
+  ctx.quadraticCurveTo(tx+sc(sway*0.8), curTop+sc(1), tx+sc(1.5)+sc(sway*0.8), curTop);
+  ctx.quadraticCurveTo(tx+sc(4)+sc(sway*0.4), lerp(ty0,curTop,.5), tx+sc(4), ty0);
+  ctx.closePath();
+  ctx.fillStyle = BARK_MID;
+  ctx.globalAlpha = ease(p)*0.85;
+  ctx.fill();
+  ctx.restore();
+
+  // Highlight streak
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx-sc(1), ty0);
+  ctx.quadraticCurveTo(tx-sc(1)+sc(sway*0.3), lerp(ty0,curTop,.4), tx+sc(sway*0.7), curTop);
+  ctx.strokeStyle = BARK_LIGHT;
+  ctx.lineWidth = sc(2);
+  ctx.globalAlpha = ease(p)*0.45;
+  ctx.lineCap='round';
+  ctx.stroke();
+  ctx.restore();
+
+  // Bark texture lines
+  if(p>.5){
+    ctx.save();ctx.globalAlpha=(p-.5)*0.3;
+    for(let i=0;i<5;i++){
+      const yt=lerp(ty0,ty1, .15+i*.15);
+      ctx.beginPath();
+      ctx.moveTo(tx-sc(5+Math.random()*1), yt);
+      ctx.lineTo(tx-sc(1+Math.random()), yt+sc(3+Math.random()*3));
+      ctx.strokeStyle=BARK_DARK;ctx.lineWidth=sc(.7);ctx.lineCap='round';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function drawBranches(p){
+  if(p<=0)return;
+  const tx=sc(150+sway*2);
+
+  const branches=[
+    // LEFT side  [fromX,fromY, toX,toY, w, c, start, end]
+    [150,168, 94,148,   5.0, BARK_DARK,  0.00, 0.55],
+    [150,145, 82,122,   4.2, BARK_MID,   0.05, 0.58],
+    [150,122, 88,100,   3.4, BARK_DARK,  0.12, 0.62],
+    [150,100, 98,80,    2.8, BARK_MID,   0.18, 0.65],
+    [150,80,  108,64,   2.2, BARK_DARK,  0.25, 0.70],
+    [150,62,  120,48,   1.6, BARK_MID,   0.32, 0.75],
+    // RIGHT side
+    [150,168, 206,148,  5.0, BARK_DARK,  0.02, 0.57],
+    [150,145, 218,122,  4.2, BARK_MID,   0.08, 0.60],
+    [150,122, 212,100,  3.4, BARK_DARK,  0.15, 0.64],
+    [150,100, 202,80,   2.8, BARK_MID,   0.20, 0.67],
+    [150,80,  192,64,   2.2, BARK_DARK,  0.28, 0.72],
+    [150,62,  180,48,   1.6, BARK_MID,   0.35, 0.77],
+    // Secondary branches
+    [94,148,  60,136,   2.2, BARK_DARK,  0.30, 0.72],
+    [206,148, 240,136,  2.2, BARK_DARK,  0.32, 0.73],
+    [82,122,  48,108,   1.8, BARK_MID,   0.38, 0.75],
+    [218,122, 252,108,  1.8, BARK_MID,   0.40, 0.76],
+    [88,100,  52,86,    1.4, BARK_DARK,  0.45, 0.79],
+    [212,100, 248,86,   1.4, BARK_DARK,  0.47, 0.80],
+    // Top small twigs
+    [108,64,  90,50,    1.0, BARK_MID,   0.55, 0.85],
+    [192,64,  210,50,   1.0, BARK_MID,   0.57, 0.86],
+    [120,48,  104,36,   0.8, BARK_DARK,  0.62, 0.90],
+    [180,48,  196,36,   0.8, BARK_DARK,  0.64, 0.91],
+  ];
+
+  branches.forEach(([x1,y1,x2,y2,w,c,s,e])=>{
+    const lp=clamp01((p-s)/(e-s));
+    // add sway offset
+    const swayOff = sway * (1 - y1/160) * 3;
+    drawLine(
+      sc(x1)+tx-sc(150), sc(y1),
+      sc(x2+swayOff)+tx-sc(150), sc(y2),
+      ease(lp), sc(w), c, ease(lp)*0.92
+    );
+  });
+}
+
+function drawLeaves(p){
+  if(p<=0)return;
+
+  const leafClusters=[
+    // [cx, cy, rx, ry, rot, color, startP, size]
+    // Left lower
+    {x:58,y:134,rx:14,ry:8,r:-28,c:LEAF_MID,s:.02,sz:1},
+    {x:44,y:130,rx:11,ry:7,r:-40,c:LEAF_DARK,s:.06,sz:.9},
+    {x:46,y:108,rx:13,ry:8,r:-45,c:LEAF_BRIGHT,s:.10,sz:1},
+    {x:32,y:104,rx:10,ry:6.5,r:-55,c:LEAF_MID,s:.14,sz:.85},
+    {x:50,y:86, rx:12,ry:7.5,r:-50,c:LEAF_DARK,s:.17,sz:1},
+    {x:36,y:80, rx:9, ry:6, r:-60,c:LEAF_BRIGHT,s:.21,sz:.85},
+    {x:54,y:66, rx:12,ry:7, r:-55,c:LEAF_MID,s:.24,sz:1},
+    {x:68,y:56, rx:11,ry:7, r:-60,c:LEAF_DARK,s:.28,sz:.9},
+    {x:82,y:48, rx:11,ry:6.5,r:-65,c:LEAF_BRIGHT,s:.32,sz:.85},
+    // Right lower
+    {x:242,y:134,rx:14,ry:8,r:28, c:LEAF_MID,s:.04,sz:1},
+    {x:256,y:130,rx:11,ry:7,r:40, c:LEAF_DARK,s:.08,sz:.9},
+    {x:254,y:108,rx:13,ry:8,r:45, c:LEAF_BRIGHT,s:.12,sz:1},
+    {x:268,y:104,rx:10,ry:6.5,r:55,c:LEAF_MID,s:.16,sz:.85},
+    {x:250,y:86, rx:12,ry:7.5,r:50,c:LEAF_DARK,s:.19,sz:1},
+    {x:264,y:80, rx:9, ry:6, r:60, c:LEAF_BRIGHT,s:.22,sz:.85},
+    {x:246,y:66, rx:12,ry:7, r:55, c:LEAF_MID,s:.26,sz:1},
+    {x:232,y:56, rx:11,ry:7, r:60, c:LEAF_DARK,s:.30,sz:.9},
+    {x:218,y:48, rx:11,ry:6.5,r:65,c:LEAF_BRIGHT,s:.34,sz:.85},
+    // Top canopy
+    {x:150,y:24, rx:18,ry:10,r:0, c:LEAF_MID,s:.36,sz:1.1},
+    {x:128,y:36, rx:14,ry:8, r:-18,c:LEAF_DARK,s:.40,sz:1},
+    {x:172,y:36, rx:14,ry:8, r:18, c:LEAF_BRIGHT,s:.42,sz:1},
+    {x:112,y:44, rx:12,ry:7, r:-25,c:LEAF_MID,s:.45,sz:.95},
+    {x:188,y:44, rx:12,ry:7, r:25, c:LEAF_DARK,s:.47,sz:.95},
+    {x:96, y:52, rx:11,ry:6.5,r:-30,c:LEAF_BRIGHT,s:.50,sz:.9},
+    {x:204,y:52, rx:11,ry:6.5,r:30,c:LEAF_MID,s:.52,sz:.9},
+    {x:104,y:36, rx:10,ry:6, r:-22,c:LEAF_DARK,s:.55,sz:.88},
+    {x:196,y:36, rx:10,ry:6, r:22, c:LEAF_BRIGHT,s:.57,sz:.88},
+    {x:150,y:38, rx:16,ry:9, r:0,  c:LEAF_LIGHT,s:.60,sz:1},
+    // Mid canopy fill
+    {x:74, y:68, rx:10,ry:6.5,r:-45,c:LEAF_MID,s:.38,sz:.9},
+    {x:226,y:68, rx:10,ry:6.5,r:45, c:LEAF_MID,s:.40,sz:.9},
+    {x:62, y:86, rx:9, ry:6,  r:-50,c:LEAF_DARK,s:.43,sz:.85},
+    {x:238,y:86, rx:9, ry:6,  r:50, c:LEAF_DARK,s:.44,sz:.85},
+  ];
+
+  leafClusters.forEach(lf=>{
+    const lp = clamp01((p - lf.s) / 0.28);
+    if(lp<=0)return;
+    const ep = ease(lp);
+    const swayOff = sway * (1 - lf.y/160) * 2.5;
+    ctx.save();
+    ctx.globalAlpha = ep * 0.88;
+    // translate to leaf center
+    const lx = sc(lf.x + swayOff);
+    const ly = sc(lf.y);
+    ctx.translate(lx, ly);
+    ctx.rotate(lf.r * Math.PI/180);
+    ctx.scale(ep * lf.sz, ep * lf.sz);
+    // leaf shape — ellipse with slight point
+    ctx.beginPath();
+    ctx.ellipse(0, 0, sc(lf.rx), sc(lf.ry), 0, 0, Math.PI*2);
+    ctx.fillStyle = lf.c;
+    ctx.fill();
+    // leaf vein
+    ctx.beginPath();
+    ctx.moveTo(-sc(lf.rx*.7), 0);
+    ctx.lineTo(sc(lf.rx*.7), 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = sc(.5);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawCanopyGlow(p){
+  if(p<=0)return;
+  ctx.save();
+  const grd = ctx.createRadialGradient(sc(150+sway*1.5),sc(100),sc(10),sc(150+sway),sc(100),sc(95));
+  grd.addColorStop(0,`rgba(212,168,67,${p*0.12})`);
+  grd.addColorStop(1,'rgba(212,168,67,0)');
+  ctx.fillStyle=grd;
+  ctx.beginPath();
+  ctx.ellipse(sc(150+sway*1.5),sc(100),sc(95),sc(80),0,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ─── ANIMATION LOOP ─── */
+const TIMINGS = {
+  rootStart:  20,  rootEnd:  90,   // frames
+  trunkStart: 85,  trunkEnd: 155,
+  branchStart:148, branchEnd:220,
+  leafStart:  210, leafEnd:  310,
+  glowStart:  290, glowEnd:  350,
+  swayStart:  320,
+};
+
+function resetAndDraw(){
+  frame=0; rootP=0; trunkP=0; branchP=0; leafP=0; glowP=0; sway=0;
+  if(raf) cancelAnimationFrame(raf);
+  animate();
+}
+
+function animate(){
+  frame++;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Update progress values (60fps target)
+  const T=TIMINGS;
+  rootP   = clamp01((frame-T.rootStart)  /(T.rootEnd-T.rootStart));
+  trunkP  = clamp01((frame-T.trunkStart) /(T.trunkEnd-T.trunkStart));
+  branchP = clamp01((frame-T.branchStart)/(T.branchEnd-T.branchStart));
+  leafP   = clamp01((frame-T.leafStart)  /(T.leafEnd-T.leafStart));
+  glowP   = clamp01((frame-T.glowStart)  /(T.glowEnd-T.glowStart));
+
+  // Sway after all grown
+  if(frame>T.swayStart){
+    sway += swayDir * 0.018;
+    if(sway>1.8)  swayDir=-1;
+    if(sway<-1.8) swayDir= 1;
+  }
+
+  drawBackground();
+  drawCanopyGlow(glowP * (0.5 + Math.sin(frame*0.03)*0.5));
+  drawGround(rootP>0?1:0);
+  drawRoots(rootP);
+  if(trunkP>0){
+    // re-scale cx for sway
+    drawTrunk(trunkP);
+  }
+  if(branchP>0) drawBranches(branchP);
+  if(leafP>0)   drawLeaves(leafP);
+
+  // Keep animating for sway loop
+  if(frame<T.leafEnd || frame>T.swayStart){
+    raf=requestAnimationFrame(animate);
+  } else {
+    // Tree fully grown — reveal the UI
+    if(typeof revealUI === 'function') revealUI();
+    // pause, then resume for sway
+    setTimeout(()=>{ raf=requestAnimationFrame(animate); }, 400);
+  }
+}
+
+// Start after a short delay
+setTimeout(animate, 200);
+
+// SAFETY FALLBACK — show login no matter what after 3s
+setTimeout(()=>{ if(typeof revealUI==='function') revealUI(); }, 3000);
+
+})();
+</script>
+
+</body>
+</html>
