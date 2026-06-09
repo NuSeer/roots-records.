@@ -8535,6 +8535,25 @@ const SAVE_KEY = 'rr_data_v1';
 let autoSaveTimer;
 let lastSaveTime = null;
 
+// ═══════════════════════════════════════════════
+//  MULTI-TREE registry & namespacing
+// ═══════════════════════════════════════════════
+const TREES_KEY = 'rr_trees';
+const ACTIVE_TREE_KEY = 'rr_active_tree';
+// Keys scoped per-tree (everything else stays global/account-level):
+const TREE_SCOPED_BASES = ['rr_data_v1','rr_default_line','rr_dna_summary','rr_marker_overrides','rr_dna_pin'];
+
+function getTrees(){ try { return JSON.parse(localStorage.getItem(TREES_KEY)) || []; } catch(e){ return []; } }
+function setTrees(list){ localStorage.setItem(TREES_KEY, JSON.stringify(list)); }
+function getActiveTreeId(){ return localStorage.getItem(ACTIVE_TREE_KEY) || 'my-family'; }
+function setActiveTreeId(id){ localStorage.setItem(ACTIVE_TREE_KEY, id); }
+function activeTree(){ return getTrees().find(t => t.id === getActiveTreeId()) || null; }
+// Namespace a base key to the active tree, e.g. treeKey('rr_data_v1') -> 'rr_data_v1::my-family'
+function treeKey(base){ return base + '::' + getActiveTreeId(); }
+function slugifyTreeName(name){
+  return (name||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || ('tree-' + getTrees().length);
+}
+
 // ── PocketBase sync ──────────────────────────────────────────────────────────
 const PB_URL = 'http://187.124.146.184:8090';
 let pbToken = null;
