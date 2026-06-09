@@ -8554,6 +8554,25 @@ function slugifyTreeName(name){
   return (name||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || ('tree-' + getTrees().length);
 }
 
+// One-time, non-destructive migration: fold any legacy single-tree data into a "My Family" tree.
+// Legacy keys are COPIED (not moved) — originals remain as an untouched backup.
+function migrateToMultiTree(){
+  if (localStorage.getItem(TREES_KEY)) return; // already migrated
+  const id = 'my-family';
+  const hadLegacy = localStorage.getItem('rr_data_v1') !== null;
+  setTrees([{ id, name: 'My Family', createdAt: new Date().toISOString() }]);
+  setActiveTreeId(id);
+  TREE_SCOPED_BASES.forEach(base => {
+    const v = localStorage.getItem(base);
+    if (v !== null && localStorage.getItem(base + '::' + id) === null) {
+      localStorage.setItem(base + '::' + id, v);
+    }
+  });
+  console.log('[multi-tree] initialized; legacy keys preserved as backup', { hadLegacyData: hadLegacy });
+}
+// Run immediately so the namespaced data exists before any load/autosave reads it.
+migrateToMultiTree();
+
 // ── PocketBase sync ──────────────────────────────────────────────────────────
 const PB_URL = 'http://187.124.146.184:8090';
 let pbToken = null;
