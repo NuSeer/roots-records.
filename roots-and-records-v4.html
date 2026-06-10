@@ -606,36 +606,9 @@ svg.net-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events
     <!-- TOTAL COUNT -->
     <div id="glance-total" style="font-size:12px;color:var(--text3);margin-bottom:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid var(--div);"></div>
 
-    <!-- FAMILY LINE STATUS ROW -->
+    <!-- FAMILY LINE STATUS ROW (rendered from active tree's lines by refreshGlance) -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px;">
-      <div class="card" style="border-top:3px solid var(--foreman);cursor:pointer;transition:all .15s;" onclick="navToLineFilter('Foreman / Drewitt (Lawson)')" onmouseover="this.style.borderColor='var(--foreman)';this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <div style="font-size:11px;font-weight:700;color:var(--foreman);margin-bottom:6px;">🌳 FOREMAN / DREWITT (LAWSON)</div>
-        <div style="font-size:11px;color:var(--text3);">Father's Paternal Grandparents</div>
-        <div id="glance-stat-foreman" style="font-size:1.4rem;font-weight:700;color:var(--text);margin:6px 0;">0 people</div>
-        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;"><div id="glance-bar-foreman" style="height:100%;width:0%;background:var(--foreman);border-radius:2px;transition:width .6s;"></div></div>
-        <div style="font-size:10px;color:var(--foreman);margin-top:6px;opacity:0.7;">Click to view people →</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--smith1);cursor:pointer;transition:all .15s;" onclick="navToLineFilter('Smith (Elsie)')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <div style="font-size:11px;font-weight:700;color:var(--smith1);margin-bottom:6px;">🌳 SMITH (ELSIE)</div>
-        <div style="font-size:11px;color:var(--text3);">Father's Maternal Grandparents</div>
-        <div id="glance-stat-smith1" style="font-size:1.4rem;font-weight:700;color:var(--text);margin:6px 0;">0 people</div>
-        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;"><div id="glance-bar-smith1" style="height:100%;width:0%;background:var(--smith1);border-radius:2px;transition:width .6s;"></div></div>
-        <div style="font-size:10px;color:var(--smith1);margin-top:6px;opacity:0.7;">Click to view people →</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--reid);cursor:pointer;transition:all .15s;" onclick="navToLineFilter('Reid (Charlie)')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <div style="font-size:11px;font-weight:700;color:var(--reid);margin-bottom:6px;">🌳 REID (CHARLIE)</div>
-        <div style="font-size:11px;color:var(--text3);">Mother's Paternal Grandparents</div>
-        <div id="glance-stat-reid" style="font-size:1.4rem;font-weight:700;color:var(--text);margin:6px 0;">0 people</div>
-        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;"><div id="glance-bar-reid" style="height:100%;width:0%;background:var(--reid);border-radius:2px;transition:width .6s;"></div></div>
-        <div style="font-size:10px;color:var(--reid);margin-top:6px;opacity:0.7;">Click to view people →</div>
-      </div>
-      <div class="card" style="border-top:3px solid var(--smith2);cursor:pointer;transition:all .15s;" onclick="navToLineFilter('Smith (Erma)')" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <div style="font-size:11px;font-weight:700;color:var(--smith2);margin-bottom:6px;">🌳 SMITH (ERMA)</div>
-        <div style="font-size:11px;color:var(--text3);">Mother's Maternal Grandparents</div>
-        <div id="glance-stat-smith2" style="font-size:1.4rem;font-weight:700;color:var(--text);margin:6px 0;">0 people</div>
-        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;"><div id="glance-bar-smith2" style="height:100%;width:0%;background:var(--smith2);border-radius:2px;transition:width .6s;"></div></div>
-        <div style="font-size:10px;color:var(--smith2);margin-top:6px;opacity:0.7;">Click to view people →</div>
-      </div>
+      <div id="glance-line-cards" style="display:contents;"></div>
     </div>
 
     <!-- DYNAMIC ALERTS GRID -->
@@ -1831,12 +1804,7 @@ You can also paste any free-form research text and it will be imported as a Rese
 
     <div class="card" style="margin-bottom:16px;">
       <div class="card-label">By Family Line</div>
-      <div id="prog-lines">
-        <div class="pw"><div class="pl"><span style="color:var(--foreman);">🌳 Foreman / Drewitt (Lawson)</span><span id="prog-pct-foreman" style="color:var(--foreman);">0 people</span></div><div class="pb2"><div class="pf" id="prog-bar-foreman" style="width:0%;background:var(--foreman);"></div></div></div>
-        <div class="pw"><div class="pl"><span style="color:var(--smith1);">🌳 Smith (Elsie)</span><span id="prog-pct-smith1" style="color:var(--smith1);">0 people</span></div><div class="pb2"><div class="pf" id="prog-bar-smith1" style="width:0%;background:var(--smith1);"></div></div></div>
-        <div class="pw"><div class="pl"><span style="color:var(--reid);">🌳 Reid (Charlie)</span><span id="prog-pct-reid" style="color:var(--reid);">0 people</span></div><div class="pb2"><div class="pf" id="prog-bar-reid" style="width:0%;background:var(--reid);"></div></div></div>
-        <div class="pw"><div class="pl"><span style="color:var(--smith2);">🌳 Smith (Erma)</span><span id="prog-pct-smith2" style="color:var(--smith2);">0 people</span></div><div class="pb2"><div class="pf" id="prog-bar-smith2" style="width:0%;background:var(--smith2);"></div></div></div>
-      </div>
+      <div id="prog-lines"><!-- rendered from active tree's lines by refreshProgress --></div>
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -3691,20 +3659,25 @@ function setFocusPerson(idx){
 }
 
 function refreshGlance(){
-  const lineNames=['Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)'];
-  const lineKeys=['foreman','smith1','reid','smith2'];
-  const counts={};
-  lineNames.forEach((l,i)=>{ counts[lineKeys[i]]=getPeopleForLine(l).length; });
+  const ROLE={'Foreman / Drewitt (Lawson)':"Father's Paternal Grandparents",'Smith (Elsie)':"Father's Maternal Grandparents",'Reid (Charlie)':"Mother's Paternal Grandparents",'Smith (Erma)':"Mother's Maternal Grandparents"};
+  const fam=getLines().filter(l=>l!=='Unknown'&&l!=='Composite');
+  const counts=fam.map(l=>({name:l,count:getPeopleForLine(l).length,color:lineColor(l)}));
   const composite=getPeopleForLine('Composite').length;
   const total=people.length;
-  const maxCount=Math.max(...Object.values(counts),composite,1);
+  const maxCount=Math.max(...counts.map(c=>c.count),composite,1);
 
-  Object.entries(counts).forEach(([k,c])=>{
-    const stat=document.getElementById('glance-stat-'+k);
-    const bar =document.getElementById('glance-bar-'+k);
-    if(stat) stat.textContent=c+' people';
-    if(bar)  bar.style.width=Math.round((c/maxCount)*100)+'%';
-  });
+  const wrap=document.getElementById('glance-line-cards');
+  if(wrap){
+    wrap.innerHTML=counts.map(c=>{
+      const w=Math.round((c.count/maxCount)*100), role=ROLE[c.name]||'';
+      return '<div class="card" data-line="'+rrEscAttr(c.name)+'" style="border-top:3px solid '+c.color+';cursor:pointer;transition:all .15s;" onclick="navToLineFilter(this.dataset.line)" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'
+        +'<div style="font-size:11px;font-weight:700;color:'+c.color+';margin-bottom:6px;">🌳 '+rrEscAttr(c.name.toUpperCase())+'</div>'
+        +(role?'<div style="font-size:11px;color:var(--text3);">'+role+'</div>':'')
+        +'<div style="font-size:1.4rem;font-weight:700;color:var(--text);margin:6px 0;">'+c.count+' people</div>'
+        +'<div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;"><div style="height:100%;width:'+w+'%;background:'+c.color+';border-radius:2px;transition:width .6s;"></div></div>'
+        +'<div style="font-size:10px;color:'+c.color+';margin-top:6px;opacity:0.7;">Click to view people →</div></div>';
+    }).join('') || '<div style="grid-column:1/-1;font-size:12px;color:var(--text3);padding:14px;text-align:center;background:rgba(255,255,255,0.03);border-radius:8px;border:1px dashed var(--div);">No family lines yet — add people or upload a GEDCOM, then tag them to a line. Lines you create appear here automatically.</div>';
+  }
 
   // Show total at top if present
   const totEl=document.getElementById('glance-total');
@@ -4828,9 +4801,9 @@ function generateReport(type){
     'Double Ancestor Chart':header+`<div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Father's side on the left · Mother's side on the right</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div><div style="font-weight:700;color:var(--foreman);border-bottom:2px solid var(--foreman);padding-bottom:6px;margin-bottom:12px;font-size:13px;">Father's Side</div>
-        ${people.filter(p=>p.line==='foreman'||p.line==='smith1').map(p=>`<div style="padding:7px 0;border-bottom:1px solid var(--div);font-size:12px;"><span style="font-weight:700;">${p.name}</span> <span style="color:var(--text3);">${p.birth||'b.?'} — ${p.death||'d.?'}</span></div>`).join('')||'<div style="color:var(--text3);font-size:12px;padding:10px 0;">Add Foreman or Smith (Elsie) line people</div>'}</div>
+        ${people.filter(p=>p.line==='foreman'||p.line==='smith1'||(p.line&&(p.line.includes('Foreman')||p.line.includes('Smith (Elsie)')))).map(p=>`<div style="padding:7px 0;border-bottom:1px solid var(--div);font-size:12px;"><span style="font-weight:700;">${p.name}</span> <span style="color:var(--text3);">${p.birth||'b.?'} — ${p.death||'d.?'}</span></div>`).join('')||'<div style="color:var(--text3);font-size:12px;padding:10px 0;">Add Foreman or Smith (Elsie) line people</div>'}</div>
         <div><div style="font-weight:700;color:var(--reid);border-bottom:2px solid var(--reid);padding-bottom:6px;margin-bottom:12px;font-size:13px;">Mother's Side</div>
-        ${people.filter(p=>p.line==='reid'||p.line==='smith2').map(p=>`<div style="padding:7px 0;border-bottom:1px solid var(--div);font-size:12px;"><span style="font-weight:700;">${p.name}</span> <span style="color:var(--text3);">${p.birth||'b.?'} — ${p.death||'d.?'}</span></div>`).join('')||'<div style="color:var(--text3);font-size:12px;padding:10px 0;">Add Reid or Smith (Erma) line people</div>'}
+        ${people.filter(p=>p.line==='reid'||p.line==='smith2'||(p.line&&(p.line.includes('Reid')||p.line.includes('Smith (Erma)')))).map(p=>`<div style="padding:7px 0;border-bottom:1px solid var(--div);font-size:12px;"><span style="font-weight:700;">${p.name}</span> <span style="color:var(--text3);">${p.birth||'b.?'} — ${p.death||'d.?'}</span></div>`).join('')||'<div style="color:var(--text3);font-size:12px;padding:10px 0;">Add Reid or Smith (Erma) line people</div>'}
         </div></div>`,
 
     'Relationship Chart':header+'<div style="font-size:12px;color:#a89070;margin-bottom:12px;">How every person in your tree connects to your focus person</div><div style="text-align:center;overflow-x:auto;"><svg id="relationship-svg" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg" style="max-width:680px;width:100%;"></svg><div style="font-size:11px;color:#a89070;margin-top:6px;">Add people to your tree to populate</div></div>',
@@ -8614,6 +8587,36 @@ function deleteTree(){
   setActiveTreeId(remaining[0].id); location.reload();
 }
 
+// ---- Populate every family-line <select> from the active tree's lines ----
+function rrEscAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function populateLineSelectors(){
+  const fam = getLines().filter(l => l!=='Unknown' && l!=='Composite');
+  // id -> { pre:[[value,label]...] leading options kept verbatim, tail:[...], emoji:bool }
+  const CFG = {
+    'person-line-filter':    {pre:[['','All Lines']],                                   tail:[['Composite','⭐ Composite / Unassigned']], emoji:true},
+    'upload-target':         {pre:[['⭐ Composite Master Tree','⭐ Composite Master Tree']], tail:[],                                     emoji:false},
+    'import-line':           {pre:[['composite','⭐ Composite']],                        tail:[],                                          emoji:false},
+    'note-line':             {pre:[['composite','⭐ Composite']],                        tail:[],                                          emoji:false},
+    'scratch-line':          {pre:[['','No line tag']],                                 tail:[['Composite','Composite']],                 emoji:false},
+    'composite-line-filter': {pre:[['','All Lines']],                                   tail:[['Composite','Composite']],                 emoji:false},
+    'photo-line':            {pre:[['Composite','Composite']],                          tail:[],                                          emoji:false},
+    'photo-filter':          {pre:[['','All Lines']],                                   tail:[],                                          emoji:false},
+    'cal-line':              {pre:[['All Lines','All Lines']],                          tail:[],                                          emoji:false},
+    'mt-line':               {pre:[['Unknown','Unknown']],                              tail:[],                                          emoji:false},
+  };
+  Object.keys(CFG).forEach(id => {
+    const sel = document.getElementById(id); if(!sel) return;
+    const cfg = CFG[id];
+    const prev = sel.value;
+    let html = '';
+    cfg.pre.forEach(([v,l]) => { html += '<option value="'+rrEscAttr(v)+'">'+rrEscAttr(l)+'</option>'; });
+    fam.forEach(l => { html += '<option value="'+rrEscAttr(l)+'">'+(cfg.emoji?'🌳 ':'')+rrEscAttr(l)+'</option>'; });
+    cfg.tail.forEach(([v,l]) => { html += '<option value="'+rrEscAttr(v)+'">'+rrEscAttr(l)+'</option>'; });
+    sel.innerHTML = html;
+    if(prev){ const keep = Array.prototype.find.call(sel.options, o => o.value===prev); if(keep) sel.value = prev; }
+  });
+}
+
 // One-time, non-destructive migration: fold any legacy single-tree data into a "My Family" tree.
 // Legacy keys are COPIED (not moved) — originals remain as an untouched backup.
 function migrateToMultiTree(){
@@ -10809,21 +10812,16 @@ function renderSavedQuotesList(){
 //  PROGRESS TRACKER — dynamic calculation
 // ═══════════════════════════════════════════════
 function refreshProgress(){
-  const lineMap = {
-    'foreman': people.filter(p=>p.line&&p.line.includes('Foreman')).length,
-    'smith1':  people.filter(p=>p.line&&p.line.includes('Smith (Elsie)')).length,
-    'reid':    people.filter(p=>p.line&&p.line.includes('Reid')).length,
-    'smith2':  people.filter(p=>p.line&&p.line.includes('Smith (Erma)')).length,
-  };
-  const maxLine = Math.max(...Object.values(lineMap), 1);
-
-  // Update line bars
-  Object.entries(lineMap).forEach(([key, count])=>{
-    const bar = document.getElementById('prog-bar-'+key);
-    const lbl = document.getElementById('prog-pct-'+key);
-    if(bar) bar.style.width = Math.round((count/Math.max(maxLine,1))*100)+'%';
-    if(lbl) lbl.textContent = count + ' people';
-  });
+  const fam = getLines().filter(l=>l!=='Unknown'&&l!=='Composite');
+  const rows = fam.map(l=>({name:l, count:getPeopleForLine(l).length, color:lineColor(l)}));
+  const maxLine = Math.max(...rows.map(r=>r.count), 1);
+  const pl = document.getElementById('prog-lines');
+  if(pl){
+    pl.innerHTML = rows.map(r=>{
+      const w = Math.round((r.count/maxLine)*100);
+      return '<div class="pw"><div class="pl"><span style="color:'+r.color+';">🌳 '+rrEscAttr(r.name)+'</span><span style="color:'+r.color+';">'+r.count+' people</span></div><div class="pb2"><div class="pf" style="width:'+w+'%;background:'+r.color+';"></div></div></div>';
+    }).join('') || '<div style="font-size:12px;color:var(--text3);padding:8px;">No family lines yet — add people or upload a GEDCOM to begin.</div>';
+  }
 
   // Update stats
   const totalPeople = people.length;
@@ -11220,6 +11218,7 @@ nav = function(id, lineName, lineColor, lineKey){
 // Load saved data on startup
 document.addEventListener('DOMContentLoaded', function(){
   renderTreeSwitcher();
+  populateLineSelectors();
   setTimeout(loadSavedData, 300);
   // Check for saved DNA summary
   setTimeout(function(){
