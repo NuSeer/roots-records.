@@ -12,22 +12,22 @@
 
 **Source of truth:** `C:\Users\jfwat\Downloads\roots-and-records-v4.html` (pulled live from VPS).
 
-**Verification convention:** Open the file via `file:///C:/Users/jfwat/sankofa-roots/roots-and-records-v4.html` in a browser, open DevTools Console, and run the self-check snippet given in each task. "FAIL/PASS" refer to console output. Manual UI checks are spelled out explicitly.
+**Verification convention:** Open the file via `file:///C:/Users/jfwat/roots-records/roots-and-records-v4.html` in a browser, open DevTools Console, and run the self-check snippet given in each task. "FAIL/PASS" refer to console output. Manual UI checks are spelled out explicitly.
 
 ---
 
 ### Task 0: Repo + working copy setup (reconcile VPS ↔ GitHub)
 
 **Files:**
-- Create (working dir): `C:\Users\jfwat\sankofa-roots\` (fresh clone of the dotted repo)
+- Create (working dir): `C:\Users\jfwat\roots-records\` (fresh clone of the dotted repo)
 - Copy in: live `roots-and-records-v4.html`
 
 - [ ] **Step 1: Clone the canonical (dotted) repo**
 
 ```bash
 cd /c/Users/jfwat
-git clone "https://github.com/NuSeer/roots-records..git" sankofa-roots
-cd sankofa-roots
+git clone "https://github.com/NuSeer/roots-records..git" roots-records
+cd roots-records
 git checkout -b multi-tree
 ```
 Expected: clone succeeds; on new branch `multi-tree`. (If the `.git` suffix on a dotted repo name fails, use the URL `https://github.com/NuSeer/roots-records.` without `.git`.)
@@ -36,7 +36,7 @@ Expected: clone succeeds; on new branch `multi-tree`. (If the `.git` suffix on a
 
 Copy the live file over whatever stale copy the repo holds, standardizing the filename:
 ```bash
-cp "/c/Users/jfwat/Downloads/roots-and-records-v4.html" "/c/Users/jfwat/sankofa-roots/roots-and-records-v4.html"
+cp "/c/Users/jfwat/Downloads/roots-and-records-v4.html" "/c/Users/jfwat/roots-records/roots-and-records-v4.html"
 git add roots-and-records-v4.html
 git status
 ```
@@ -390,7 +390,7 @@ In console: `console.log(localStorage.getItem('rr_data_v1'))` → still returns 
 - [ ] **Step 3: Push the branch to the dotted repo**
 
 ```bash
-cd /c/Users/jfwat/sankofa-roots
+cd /c/Users/jfwat/roots-records
 git push -u origin multi-tree
 ```
 Expected: branch pushed to `github.com/NuSeer/roots-records.`.
@@ -399,7 +399,7 @@ Expected: branch pushed to `github.com/NuSeer/roots-records.`.
 
 Confirm with the user first (this overwrites the live `/roots/` page). On approval:
 ```bash
-scp -i ~/.ssh/vps_key "/c/Users/jfwat/sankofa-roots/roots-and-records-v4.html" root@187.124.146.184:/var/www/html/roots/roots-and-records-v4.html
+scp -i ~/.ssh/vps_key "/c/Users/jfwat/roots-records/roots-and-records-v4.html" root@187.124.146.184:/var/www/html/roots/roots-and-records-v4.html
 ```
 Expected: live page now multi-tree. Hard-refresh `/roots/` and confirm the switcher appears and existing data is intact.
 

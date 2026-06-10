@@ -9,7 +9,7 @@
 
 ## 1. Goal
 
-Stop Roots & Records (R&R) from being hardwired to one family (the four hardcoded grandparent lines). Make it a **multi-tree** app with a switcher, so the user can keep their own family tree, build a separate tree for their children, and eventually run paying genealogy clients (the Sankofa direction). Each tree is its own isolated workspace that **seeds fresh as data is added** — no hardcoded people or lines in new trees.
+Stop Roots & Records (R&R) from being hardwired to one family (the four hardcoded grandparent lines). Make it a **multi-tree** app with a switcher, so the user can keep their own family tree, build a separate tree for their children, and eventually run paying genealogy clients (a future paid-client direction). Each tree is its own isolated workspace that **seeds fresh as data is added** — no hardcoded people or lines in new trees.
 
 Secondary: selectively incorporate portable, high-value features from
 `liberu-genealogy/genealogy-laravel`, adapted to R&R's single-file client-side architecture.
@@ -110,7 +110,7 @@ DNA, DNA-analysis, Leeds, match-timeline, composite, network, census, soundex, m
 
 ## 9. Out of Scope for This Pass (separate follow-on work)
 
-- **Sankofa feature comparison** — produce a gap list (R&R vs Sankofa Next.js app); ASK before incorporating anything; unique features untouched.
+- **Feature gap review** — produce a gap list (R&R vs other genealogy apps); ASK before incorporating anything; unique features untouched.
 - **Debug pass** — find/fix bugs; ASK before changing any unique feature.
 
 ---
@@ -127,7 +127,7 @@ DNA, DNA-analysis, Leeds, match-timeline, composite, network, census, soundex, m
 
 ## 11. Plan 2 — Feature Roadmap (additive, non-destructive; built AFTER multi-tree)
 
-All Plan 2 work is per-tree and MUST honor the same guardrails: do NOT touch the DNA/SNP engine or the African American genomic references (~102 rsIDs), and preserve every existing archival source. Backend = the user's VPS (`187.124.146.184`, PocketBase + node) and/or Vercel. **Sankofa is NOT the user's app and is out of scope.**
+All Plan 2 work is per-tree and MUST honor the same guardrails: do NOT touch the DNA/SNP engine or the African American genomic references (~102 rsIDs), and preserve every existing archival source. Backend = the user's VPS (`187.124.146.184`, PocketBase + node) and/or Vercel.
 
 **P2.1 — Verified African American research sources (wire-in)**
 Add as pre-filled deep-link launchers in the Archives/Newspaper view (verified live 2026-06-09):
