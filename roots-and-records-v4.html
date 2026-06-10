@@ -10476,14 +10476,10 @@ function generateNameVariants(name){
 //  NEWSPAPER SEARCH
 // ═══════════════════════════════════════════════
 function openArchiveLink(url, title){
-  const viewer=document.getElementById('archives-viewer');
-  const iframe=document.getElementById('archives-iframe');
-  const titleEl=document.getElementById('archives-viewer-title');
-  if(!viewer||!iframe) { window.open(url,'_blank'); return; }
-  viewer.style.display='block';
-  if(titleEl) titleEl.textContent='🏛️ '+title;
-  iframe.src=url;
-  viewer.scrollIntoView({behavior:'smooth'});
+  // Major genealogy/archive sites (Ancestry, FamilySearch, LoC, NARA, etc.) block
+  // iframe embedding (X-Frame-Options/CSP), which showed a blank/"refused" panel.
+  // Open in a new browser tab instead so the link actually works.
+  window.open(url, '_blank', 'noopener');
 }
 
 // Question mark badge for people with uncertain/missing line assignment
@@ -10500,13 +10496,8 @@ let currentNewsUrl='';
 
 function openNewsViewer(url, title){
   currentNewsUrl=url;
-  const viewer=document.getElementById('newspaper-viewer');
-  const iframe=document.getElementById('newspaper-iframe');
-  const titleEl=document.getElementById('newspaper-viewer-title');
-  if(viewer) viewer.style.display='block';
-  if(titleEl) titleEl.textContent='📰 '+title;
-  if(iframe) iframe.src=url;
-  viewer.scrollIntoView({behavior:'smooth'});
+  // Newspaper archives also block iframe embedding — open in a new browser tab.
+  window.open(url, '_blank', 'noopener');
 }
 
 function closeNewsViewer(){
