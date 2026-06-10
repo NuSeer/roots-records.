@@ -453,6 +453,15 @@ svg.net-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events
     <div class="logo-mark">🌿</div>
     <div><div class="logo-text">Roots &amp; Records</div><div class="logo-sub">African American Genealogy</div></div>
   </div>
+  <div id="tree-switcher" style="padding:0 14px 10px;">
+    <select id="tree-select" onchange="switchTree(this.value)" title="Active family tree"
+      style="width:100%;background:rgba(0,0,0,0.25);color:#f0e6d2;border:1px solid rgba(212,168,67,0.4);border-radius:6px;padding:6px;font-family:inherit;font-size:12px;"></select>
+    <div style="display:flex;gap:4px;margin-top:5px;">
+      <button onclick="newTree()" title="New tree" style="flex:1;background:rgba(212,168,67,0.15);color:#d4a843;border:1px solid rgba(212,168,67,0.3);border-radius:5px;padding:4px;cursor:pointer;font-size:13px;">＋</button>
+      <button onclick="renameTree()" title="Rename tree" style="flex:1;background:rgba(212,168,67,0.15);color:#d4a843;border:1px solid rgba(212,168,67,0.3);border-radius:5px;padding:4px;cursor:pointer;font-size:13px;">✎</button>
+      <button onclick="deleteTree()" title="Delete tree" style="flex:1;background:rgba(212,168,67,0.15);color:#d4a843;border:1px solid rgba(212,168,67,0.3);border-radius:5px;padding:4px;cursor:pointer;font-size:13px;">🗑</button>
+    </div>
+  </div>
   <div class="sidebar-search">
     <div class="s-wrap">
       <span class="s-icon">🔍</span>
@@ -2232,8 +2241,8 @@ You can also paste any free-form research text and it will be imported as a Rese
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
           <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-weight:700;">Interview Focus</div>
-          <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I want to talk about memories of my grandparents on my father\'s side — the Foreman/Drewitt line.')">🌳 Father\'s side (Foreman/Drewitt)</button>
-          <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I want to talk about memories of my grandparents on my mother\'s side — the Reid and Smith (Erma) line.')">🌳 Mother\'s side (Reid/Smith Erma)</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I want to talk about memories of my grandparents on my father\'s side.')">🌳 Father\'s side</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I want to talk about memories of my grandparents on my mother\'s side.')">🌳 Mother\'s side</button>
           <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I want to record everything I know about all four family lines before I forget.')">📖 Everything I know — all lines</button>
           <button class="btn btn-ghost btn-sm" style="font-size:11px;text-align:left;" onclick="askAI('ai-interview','I am interviewing an elder family member right now. Please ask gentle, open-ended questions appropriate for an older relative.')">👴 I\'m interviewing an elder right now</button>
         </div>
@@ -4452,7 +4461,7 @@ function renderMatchesTable(){
     tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3);">No matches saved yet.</td></tr>';
     updateClusters(); return;
   }
-  const lines = ['Unknown','Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)','Composite'];
+  const lines = getLines();
   tbody.innerHTML = dnaMatches.map((m,i)=>`
     <tr>
       <td style="font-weight:700;color:var(--text);">${m.name}</td>
@@ -5106,7 +5115,7 @@ function printReport(){
 async function aiGenerateReport(){
   const type=document.getElementById('rpt-type')?document.getElementById('rpt-type').value:'Family Summary';
   nav('ai-research');
-  const prompt='Generate a professional '+type+' for an African American genealogy dashboard. Family lines: Foreman / Drewitt (Lawson), Smith (Elsie), Reid (Charlie), Smith (Erma). People in tree: '+(people.map(p=>p.name+' ('+p.line+')').join(', ')||'none yet')+'. Include historical context for African American research. Format as a readable narrative report with clear sections.';
+  const prompt='Generate a professional '+type+' for an African American genealogy dashboard. Family lines: '+(getLines().filter(l=>l!=='Unknown'&&l!=='Composite').join(', ')||'not yet specified')+'. People in tree: '+(people.map(p=>p.name+' ('+p.line+')').join(', ')||'none yet')+'. Include historical context for African American research. Format as a readable narrative report with clear sections.';
   document.getElementById('ai-research-input').value=prompt;
   await sendAI('ai-research');
 }
@@ -5805,7 +5814,7 @@ async function generateAIStory(){
 
 async function aiWriteBook(){
   nav('ai-research');
-  const prompt='Write a compelling opening chapter for an African American family history book. Family lines: Foreman / Drewitt (Lawson), Smith (Elsie), Reid (Charlie), Smith (Erma). Set the post-Reconstruction era historical context. Write in a dignified literary style that honors the ancestors. Include historical events and atmosphere of the period.';
+  const prompt='Write a compelling opening chapter for an African American family history book. Family lines: '+(getLines().filter(l=>l!=='Unknown'&&l!=='Composite').join(', ')||'not yet specified')+'. Set the post-Reconstruction era historical context. Write in a dignified literary style that honors the ancestors. Include historical events and atmosphere of the period.';
   document.getElementById('ai-research-input').value=prompt;
   await sendAI('ai-research');
 }
@@ -8554,6 +8563,57 @@ function slugifyTreeName(name){
   return (name||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || ('tree-' + getTrees().length);
 }
 
+// ---- Per-tree family lines + generated color palette ----
+// Lines are now DATA inside each tree's blob (data.lines), not hardcoded.
+// A new/empty tree therefore offers only ['Unknown','Composite'].
+function getLines(){
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(treeKey('rr_data_v1'))) || {}; } catch(e){}
+  const custom = Array.isArray(data.lines) ? data.lines : [];
+  return ['Unknown', ...custom, 'Composite'];
+}
+// Palette[0..3] intentionally equals the original Foreman/Smith(Elsie)/Reid/Smith(Erma)
+// hex values, so the migrated My Family tree keeps its exact existing colors.
+const LINE_PALETTE = ['#c47a2a','#2d9e6a','#5a7adb','#8b5bbf','#d4607a','#3a9458','#c49030','#9e2850'];
+function lineColor(lineName){
+  if(lineName==='Composite') return '#c4a400';
+  if(lineName==='Unknown') return '#8a8a8a';
+  const custom = getLines().filter(l => l!=='Unknown' && l!=='Composite');
+  const idx = custom.indexOf(lineName);
+  return LINE_PALETTE[(idx<0?0:idx) % LINE_PALETTE.length];
+}
+
+// ---- Tree switcher UI ----
+function renderTreeSwitcher(){
+  const sel = document.getElementById('tree-select'); if(!sel) return;
+  const trees = getTrees(), active = getActiveTreeId();
+  sel.innerHTML = trees.map(t => '<option value="'+t.id+'"'+(t.id===active?' selected':'')+'>'+(t.name||t.id)+'</option>').join('');
+}
+function switchTree(id){ if(!id) return; setActiveTreeId(id); location.reload(); }
+function newTree(){
+  const name = prompt('Name this tree (e.g. "My Children", "Smith Clients"):'); if(!name) return;
+  let id = slugifyTreeName(name); const trees = getTrees();
+  while (trees.some(t => t.id===id)) id += '-' + (trees.length+1);
+  trees.push({ id, name, createdAt: new Date().toISOString() }); setTrees(trees);
+  setActiveTreeId(id);
+  localStorage.setItem('rr_data_v1::'+id, JSON.stringify({})); // start empty
+  location.reload();
+}
+function renameTree(){
+  const t = activeTree(); if(!t){ alert('No active tree.'); return; }
+  const name = prompt('Rename tree:', t.name); if(!name) return;
+  setTrees(getTrees().map(x => x.id===t.id ? Object.assign({}, x, {name}) : x));
+  renderTreeSwitcher();
+}
+function deleteTree(){
+  const trees = getTrees(); if(trees.length<=1){ alert('Cannot delete your only tree.'); return; }
+  const t = activeTree(); if(!t) return;
+  if(!confirm('Delete tree "'+t.name+'"? This removes its people, records, and DNA from this browser. Export a GEDCOM/backup first if you want to keep it.')) return;
+  TREE_SCOPED_BASES.forEach(base => localStorage.removeItem(base + '::' + t.id));
+  const remaining = trees.filter(x => x.id!==t.id); setTrees(remaining);
+  setActiveTreeId(remaining[0].id); location.reload();
+}
+
 // One-time, non-destructive migration: fold any legacy single-tree data into a "My Family" tree.
 // Legacy keys are COPIED (not moved) — originals remain as an untouched backup.
 function migrateToMultiTree(){
@@ -8568,6 +8628,16 @@ function migrateToMultiTree(){
       localStorage.setItem(base + '::' + id, v);
     }
   });
+  // Seed the original four lines into My Family ONLY when migrating real legacy data,
+  // so existing color-coding/labels persist. A brand-new user gets an empty tree (no lines).
+  if (hadLegacy) {
+    const famKey = 'rr_data_v1::' + id;
+    let fam = {}; try { fam = JSON.parse(localStorage.getItem(famKey)) || {}; } catch(e){}
+    if (!Array.isArray(fam.lines)) {
+      fam.lines = ['Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)'];
+      localStorage.setItem(famKey, JSON.stringify(fam));
+    }
+  }
   console.log('[multi-tree] initialized; legacy keys preserved as backup', { hadLegacyData: hadLegacy });
 }
 // Run immediately so the namespaced data exists before any load/autosave reads it.
@@ -8631,6 +8701,14 @@ async function pbLoadAll(collection){
 }
 
 async function syncToPocketBase(){
+  // Per-tree server sync needs a treeId field on the PocketBase collections (server-side
+  // schema change). Until that lands, only the main "My Family" tree syncs to the server;
+  // other trees are saved locally so they can't overwrite My Family's server records.
+  if(getActiveTreeId() !== 'my-family'){
+    const t = activeTree();
+    showToast('☁️ Server sync currently covers your main "My Family" tree only — "'+((t&&t.name)||'this tree')+'" is saved locally on this device.');
+    return;
+  }
   const ok = await pbAuth();
   if(!ok){ showToast('⚠️ Could not connect to PocketBase — saved locally only'); return; }
 
@@ -8673,6 +8751,11 @@ async function syncToPocketBase(){
 }
 
 async function loadFromPocketBase(){
+  // See syncToPocketBase: server data is the My Family tree's until per-tree treeId fields exist.
+  if(getActiveTreeId() !== 'my-family'){
+    showToast('☁️ Server load is available for your main "My Family" tree only.');
+    return;
+  }
   const ok = await pbAuth();
   if(!ok){ showToast('⚠️ Could not connect to PocketBase'); return; }
 
@@ -9101,7 +9184,7 @@ function attachPersonToLine(idx){
 function reassignPerson(idx){
   if(idx<0||idx>=people.length) return;
   const p=people[idx];
-  const lines=['Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)','Composite'];
+  const lines=getLines().filter(l=>l!=='Unknown');
   const current=p.line||'Composite';
   const choices=lines.filter(l=>l!==current);
   const chosen=prompt('Move "'+p.name+'" to which line?\n\n'+choices.map((l,i)=>(i+1)+'. '+l).join('\n')+'\n\nType the number:');
@@ -9205,10 +9288,10 @@ function buildCompositeTree(){
 
   // Stats row — clickable, links to sidebar line pages
   if(statsRow){
-    const lines=['Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)','Composite'];
+    const lines=getLines().filter(l=>l!=='Unknown');
     statsRow.innerHTML=lines.map(function(l){
-      const c=people.filter(lineMatchers[l]).length;
-      const col=lineColors[l]||'#c4a400';
+      const c=people.filter(lineMatchers[l]||(p=>(p.line||'Composite')===l)).length;
+      const col=lineColors[l]||lineColor(l);
       const shortName=l==='Foreman / Drewitt (Lawson)'?'Foreman':l==='Smith (Elsie)'?'Smith (E)':l==='Smith (Erma)'?'Smith (Er)':l.split(' ')[0];
       return '<div class="stat-box" style="border-top:3px solid '+col+';cursor:pointer;padding:8px;" '
         +'onclick="document.getElementById(\'composite-line-filter\').value=\''+l+'\';buildCompositeTree();" '
@@ -9808,10 +9891,10 @@ function buildPedigreeTree(){
   // ── Stats row ──────────────────────────────────────────────────────────
   const statsRow=document.getElementById('composite-stats-row');
   if(statsRow){
-    const lines=['Foreman / Drewitt (Lawson)','Smith (Elsie)','Reid (Charlie)','Smith (Erma)','Composite'];
+    const lines=getLines().filter(l=>l!=='Unknown');
     statsRow.innerHTML=lines.map(function(l){
       const c=people.filter(function(p){return (p.line||'Composite')===l;}).length;
-      const col=lineColors[l]||'var(--gold)';
+      const col=lineColors[l]||lineColor(l);
       return '<div class="stat-box" style="border-top:3px solid '+col+';cursor:pointer;" onclick="document.getElementById(\'composite-line-filter\').value=\''+l+'\';buildCompositeTree();">'
         +'<div style="font-size:11px;font-weight:700;color:'+col+';margin-bottom:4px;">'+l.split(' ')[0]+'</div>'
         +'<div class="stat-num" style="font-size:1.8rem;color:'+col+';">'+c+'</div>'
@@ -11136,6 +11219,7 @@ nav = function(id, lineName, lineColor, lineKey){
 
 // Load saved data on startup
 document.addEventListener('DOMContentLoaded', function(){
+  renderTreeSwitcher();
   setTimeout(loadSavedData, 300);
   // Check for saved DNA summary
   setTimeout(function(){
