@@ -6912,7 +6912,7 @@ function initDnaAnalysisPage(){
   }
 
   // Check for saved DNA results and show restore card
-  const raw=localStorage.getItem('rr_dna_summary');
+  const raw=localStorage.getItem(treeKey('rr_dna_summary'));
   const card=document.getElementById('dna-analysis-saved-card');
   const dateEl=document.getElementById('dna-analysis-saved-date');
   if(raw){
@@ -7179,7 +7179,7 @@ function setManualMarker(snp, name){
   const hint=GENOTYPE_HINTS[snp]||GENOTYPE_HINTS['default'];
   const val=prompt('Enter your known genotype for '+name+' ('+snp+')\n\n'+hint+'\n\nLeave blank to clear this override:');
   if(val===null) return; // cancelled
-  const overrides=JSON.parse(localStorage.getItem('rr_marker_overrides')||'{}');
+  const overrides=JSON.parse(localStorage.getItem(treeKey('rr_marker_overrides'))||'{}');
   if(val.trim()){
     overrides[snp]=val.trim().toUpperCase();
     showToast('✅ Manual result saved for '+name+' — re-run analysis to see updated results');
@@ -7187,17 +7187,17 @@ function setManualMarker(snp, name){
     delete overrides[snp];
     showToast('🗑️ Manual override cleared for '+name);
   }
-  localStorage.setItem('rr_marker_overrides', JSON.stringify(overrides));
+  localStorage.setItem(treeKey('rr_marker_overrides'), JSON.stringify(overrides));
 }
 
 function clearAllMarkerOverrides(){
   if(!confirm('Clear all manual marker overrides?')) return;
-  localStorage.removeItem('rr_marker_overrides');
+  localStorage.removeItem(treeKey('rr_marker_overrides'));
   showToast('🗑️ All manual overrides cleared');
 }
 
 function getMarkerOverrideCount(){
-  const o=JSON.parse(localStorage.getItem('rr_marker_overrides')||'{}');
+  const o=JSON.parse(localStorage.getItem(treeKey('rr_marker_overrides'))||'{}');
   return Object.keys(o).length;
 }
 
@@ -8209,7 +8209,7 @@ async function analyzeHealthMarkers(snpMap){
   ];
 
   // ── Manual overrides — markers you know you have ─────────────────────────
-  const MANUAL_OVERRIDES = JSON.parse(localStorage.getItem('rr_marker_overrides')||'{}');
+  const MANUAL_OVERRIDES = JSON.parse(localStorage.getItem(treeKey('rr_marker_overrides'))||'{}');
 
   let healthHTML='';
   let doctorPoints=[];
@@ -8439,7 +8439,7 @@ function saveDnaResults(){
   }
 
   try{
-    localStorage.setItem('rr_dna_summary', JSON.stringify(saved));
+    localStorage.setItem(treeKey('rr_dna_summary'), JSON.stringify(saved));
     showSavedDnaCard(saved);
     showToast('💾 DNA summary saved to browser storage');
 
@@ -8464,7 +8464,7 @@ function saveDnaResults(){
 }
 
 function loadSavedDnaResults(){
-  const raw=localStorage.getItem('rr_dna_summary');
+  const raw=localStorage.getItem(treeKey('rr_dna_summary'));
   if(!raw){showToast('No saved DNA results found.');return;}
   try{
     const saved=JSON.parse(raw);
@@ -8494,7 +8494,7 @@ function loadSavedDnaResults(){
 
 function deleteSavedDnaResults(){
   if(!confirm('Delete your saved DNA summary? This cannot be undone.')) return;
-  localStorage.removeItem('rr_dna_summary');
+  localStorage.removeItem(treeKey('rr_dna_summary'));
   const card=document.getElementById('saved-dna-card');
   if(card) card.style.display='none';
   showToast('🗑️ Saved DNA summary deleted');
@@ -8541,7 +8541,7 @@ let lastSaveTime = null;
 const TREES_KEY = 'rr_trees';
 const ACTIVE_TREE_KEY = 'rr_active_tree';
 // Keys scoped per-tree (everything else stays global/account-level):
-const TREE_SCOPED_BASES = ['rr_data_v1','rr_default_line','rr_dna_summary','rr_marker_overrides','rr_dna_pin'];
+const TREE_SCOPED_BASES = ['rr_data_v1','rr_default_line','rr_dna_summary','rr_marker_overrides']; // rr_dna_pin stays global (one app-wide PIN)
 
 function getTrees(){ try { return JSON.parse(localStorage.getItem(TREES_KEY)) || []; } catch(e){ return []; } }
 function setTrees(list){ localStorage.setItem(TREES_KEY, JSON.stringify(list)); }
@@ -8733,7 +8733,7 @@ function getAllData(){
 function manualSave(){
   try {
     const data = getAllData();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(treeKey(SAVE_KEY), JSON.stringify(data));
     lastSaveTime = new Date();
     const el = document.getElementById('autosave-status');
     if(el) el.textContent = 'Last saved: ' + lastSaveTime.toLocaleTimeString();
@@ -8748,9 +8748,9 @@ function autoSave(){
     const data = getAllData();
     const str = JSON.stringify(data);
     // Only save if data has changed (avoid unnecessary writes)
-    const prev = localStorage.getItem(SAVE_KEY);
+    const prev = localStorage.getItem(treeKey(SAVE_KEY));
     if(str !== prev){
-      localStorage.setItem(SAVE_KEY, str);
+      localStorage.setItem(treeKey(SAVE_KEY), str);
       lastSaveTime = new Date();
       const el = document.getElementById('autosave-status');
       if(el) el.textContent = 'Auto-saved: ' + lastSaveTime.toLocaleTimeString();
@@ -8760,7 +8760,7 @@ function autoSave(){
 
 function loadSavedData(){
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(treeKey(SAVE_KEY));
     if(!raw) return;
     const data = JSON.parse(raw);
     if(data.people) { people.length=0; data.people.forEach(p=>people.push(p)); renderPeopleList(); refreshHomeStats(); setTimeout(()=>{populatePersonSelectors();refreshGlance();},100); }
@@ -8845,7 +8845,7 @@ function restoreFromBackup(event){
   reader.onload = e=>{
     try {
       const data = JSON.parse(e.target.result);
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      localStorage.setItem(treeKey(SAVE_KEY), JSON.stringify(data));
       showToast('✅ Backup loaded! Refreshing…');
       setTimeout(()=>loadSavedData(), 500);
     } catch(err){ showToast('❌ Invalid backup file.'); }
@@ -8857,7 +8857,7 @@ function savePreferences(){
   const name = document.getElementById('pref-name')?.value;
   const line = document.getElementById('pref-line')?.value;
   if(name) localStorage.setItem('rr_user_name', name);
-  if(line) localStorage.setItem('rr_default_line', line);
+  if(line) localStorage.setItem(treeKey('rr_default_line'), line);
   showToast('✅ Preferences saved!');
 }
 
@@ -11139,7 +11139,7 @@ document.addEventListener('DOMContentLoaded', function(){
   setTimeout(loadSavedData, 300);
   // Check for saved DNA summary
   setTimeout(function(){
-    const raw=localStorage.getItem('rr_dna_summary');
+    const raw=localStorage.getItem(treeKey('rr_dna_summary'));
     if(raw){ try{ showSavedDnaCard(JSON.parse(raw)); }catch(e){} }
   }, 600);
   const today = new Date().toISOString().slice(0,10);
