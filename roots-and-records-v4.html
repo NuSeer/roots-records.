@@ -3180,13 +3180,36 @@ You can also paste any free-form research text and it will be imported as a Rese
   <div class="ph"><div><div class="ph-title">⚙️ <span>Settings</span></div><div class="ph-desc">Auto-save, cloud backup, AI key, preferences, and data management</div></div><button class="btn btn-back" onclick="nav('home')">← Home</button></div>
   <div class="pb">
 
-    <!-- GROQ AI KEY -->
+    <!-- GEMINI AI KEY (primary) -->
+    <div class="card" style="margin-bottom:16px;border:1px solid rgba(212,168,67,0.5);">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="font-size:2rem;">✨</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:var(--gold);font-size:14px;margin-bottom:4px;">AI Engine — Gemini <span style="font-size:9px;background:rgba(45,158,106,0.2);color:var(--grn);padding:1px 6px;border-radius:4px;vertical-align:middle;">PRIMARY</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Tried first for every AI feature. Saved only in this browser — never leaves your device. Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--burg2);">aistudio.google.com/apikey</a>.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="position:relative;flex:1;min-width:200px;">
+              <input type="password" id="gemini-key-input" class="fi" placeholder="AIza…  paste your Gemini API key here"
+                style="font-family:monospace;font-size:12px;padding-right:36px;"
+                oninput="updateGeminiStatus()">
+              <button onclick="var i=document.getElementById('gemini-key-input');i.type=i.type==='password'?'text':'password';"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);">👁</button>
+            </div>
+            <button class="btn btn-gold btn-sm" onclick="saveGeminiKey()">💾 Save Key</button>
+            <button class="btn btn-danger btn-sm" onclick="clearGeminiKey()">🗑️ Clear</button>
+          </div>
+          <div id="gemini-key-status" style="font-size:11px;margin-top:8px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROQ AI KEY (fallback) -->
     <div class="card" style="margin-bottom:16px;border:1px solid rgba(212,168,67,0.5);">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
         <div style="font-size:2rem;">🤖</div>
         <div style="flex:1;">
-          <div style="font-weight:700;color:var(--gold);font-size:14px;margin-bottom:4px;">AI Engine — Groq</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Your key is saved only in this browser. It never leaves your device. Get a free key at <a href="https://console.groq.com" target="_blank" style="color:var(--burg2);">console.groq.com</a> → API Keys → Create.</div>
+          <div style="font-weight:700;color:var(--gold);font-size:14px;margin-bottom:4px;">AI Engine — Groq <span style="font-size:9px;background:rgba(212,168,67,0.2);color:var(--gold);padding:1px 6px;border-radius:4px;vertical-align:middle;">FALLBACK</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Used automatically if Gemini is unavailable. Saved only in this browser. Get a free key at <a href="https://console.groq.com" target="_blank" style="color:var(--burg2);">console.groq.com</a> → API Keys → Create.</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <div style="position:relative;flex:1;min-width:200px;">
               <input type="password" id="groq-key-input" class="fi" placeholder="gsk_…  paste your Groq API key here"
@@ -5187,11 +5210,17 @@ ${FAMILY_CONTEXT}`,
 const AI_HISTORY={'ai-research':[],'ai-dna':[],'ai-brick':[],'ai-interview':[],'ai-story':[]};
 
 // ═══════════════════════════════════════════════
-//  GROQ AI ENGINE
+//  AI ENGINE — Gemini (primary) → Groq (fallback)
 // ═══════════════════════════════════════════════
 const GROQ_MODEL   = 'openai/gpt-oss-120b';
 const GROQ_BASE    = 'https://api.groq.com/openai/v1';
 const GROQ_MAX_TOK = 4096;
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+function getGeminiKey(){ return localStorage.getItem('rr_gemini_key')||''; }
+// True if ANY provider key is configured.
+function hasAnyAIKey(){ return !!(getGeminiKey() || getGroqKey()); }
 
 function getGroqKey(){
   return localStorage.getItem('rr_groq_key')||'';
@@ -5225,8 +5254,88 @@ function updateGroqStatus(){
   } else if(inputVal.startsWith('gsk_')){
     el.innerHTML = '<span style="color:var(--gold);">⚡ Key looks valid — click Save Key to activate</span>';
   } else {
-    el.innerHTML = '<span style="color:var(--text3);">No key saved — AI features inactive. Get a free key at console.groq.com</span>';
+    el.innerHTML = '<span style="color:var(--text3);">No Groq key saved (fallback). Get a free key at console.groq.com</span>';
   }
+}
+
+// ── Gemini key management (primary provider) ──────────────────────────────
+function saveGeminiKey(){
+  const val = document.getElementById('gemini-key-input').value.trim();
+  if(!val){ showToast('❌ Paste your Gemini key first'); return; }
+  if(!val.startsWith('AIza')){ showToast('⚠️ Gemini keys start with AIza — check your key'); return; }
+  localStorage.setItem('rr_gemini_key', val);
+  document.getElementById('gemini-key-input').value = '';
+  document.getElementById('gemini-key-input').type = 'password';
+  updateGeminiStatus();
+  showToast('✅ Gemini API key saved — Gemini is now your primary AI');
+}
+function clearGeminiKey(){
+  if(!confirm('Remove your saved Gemini API key? AI will fall back to Groq if a Groq key is set.')) return;
+  localStorage.removeItem('rr_gemini_key');
+  updateGeminiStatus();
+  showToast('🗑️ Gemini key removed');
+}
+function updateGeminiStatus(){
+  const el = document.getElementById('gemini-key-status');
+  if(!el) return;
+  const key = getGeminiKey();
+  const inputVal = document.getElementById('gemini-key-input')?.value||'';
+  if(key){
+    el.innerHTML = '<span style="color:var(--grn);">✅ Gemini active (primary). Key: '+key.slice(0,8)+'…'+key.slice(-4)+'</span>';
+  } else if(inputVal.startsWith('AIza')){
+    el.innerHTML = '<span style="color:var(--gold);">⚡ Key looks valid — click Save Key to activate</span>';
+  } else {
+    el.innerHTML = '<span style="color:var(--text3);">No Gemini key saved. Get a free key at aistudio.google.com/apikey</span>';
+  }
+}
+
+// ── Unified chat: tries Gemini first, falls back to Groq. Returns reply text. ──
+// messages = OpenAI-style [{role:'system'|'user'|'assistant', content}]. Throws on total failure.
+async function callGemini(messages, maxTok){
+  const key = getGeminiKey();
+  if(!key){ const e=new Error('No Gemini key'); e.code='NOKEY'; throw e; }
+  const sys = messages.filter(m=>m.role==='system').map(m=>m.content).join('\n\n');
+  const contents = messages.filter(m=>m.role!=='system').map(m=>({
+    role: m.role==='assistant' ? 'model' : 'user',
+    parts: [{text: m.content}]
+  }));
+  const body = { contents, generationConfig:{ maxOutputTokens: maxTok||GROQ_MAX_TOK } };
+  if(sys) body.systemInstruction = { parts:[{text: sys}] };
+  const res = await fetch(GEMINI_BASE+'/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if(!res.ok){ const e=new Error('Gemini '+res.status); e.status=res.status; throw e; }
+  const data = await res.json();
+  const reply = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+  if(!reply){ const e=new Error('Gemini returned no text'); e.status=204; throw e; }
+  return reply;
+}
+async function callGroq(messages, maxTok){
+  const key = getGroqKey();
+  if(!key){ const e=new Error('No Groq key'); e.code='NOKEY'; throw e; }
+  const res = await fetch(GROQ_BASE+'/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({ model:GROQ_MODEL, max_tokens:maxTok||GROQ_MAX_TOK, messages })
+  });
+  if(!res.ok){ const e=new Error('Groq '+res.status); e.status=res.status; throw e; }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+// Gemini → Groq. Throws Error with .code==='NOKEY' if neither key is set.
+async function callAI(messages, opts){
+  opts = opts||{};
+  const maxTok = opts.max_tokens || GROQ_MAX_TOK;
+  if(!hasAnyAIKey()){ const e=new Error('No API key'); e.code='NOKEY'; throw e; }
+  let firstErr=null;
+  if(getGeminiKey()){
+    try { const r = await callGemini(messages, maxTok); if(r) return r; }
+    catch(e){ firstErr=e; if(!getGroqKey()) throw e; /* else fall back to Groq */ }
+  }
+  if(getGroqKey()){
+    return await callGroq(messages, maxTok);
+  }
+  throw firstErr || new Error('All AI providers failed');
 }
 
 async function sendAI(section){
@@ -5236,9 +5345,8 @@ async function sendAI(section){
   const text = input.value.trim();
   if(!text) return;
 
-  const key = getGroqKey();
-  if(!key){
-    addAIMsg(msgs,'ai','<div class="ai-label">⚠️ No API Key</div>To use AI features, go to <strong>⚙️ Settings</strong> and paste your free Groq API key. Get one at <a href="https://console.groq.com" target="_blank" style="color:var(--burg2);">console.groq.com</a> — takes 2 minutes, no credit card needed.');
+  if(!hasAnyAIKey()){
+    addAIMsg(msgs,'ai','<div class="ai-label">⚠️ No API Key</div>To use AI features, go to <strong>⚙️ Settings</strong> and paste a free <strong>Gemini</strong> key (primary) and/or a <strong>Groq</strong> key (fallback). Gemini: <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--burg2);">aistudio.google.com/apikey</a> · Groq: <a href="https://console.groq.com" target="_blank" style="color:var(--burg2);">console.groq.com</a>');
     return;
   }
 
@@ -5249,42 +5357,19 @@ async function sendAI(section){
   const thinking = addAIMsg(msgs,'ai','<span class="spin"></span> Thinking…');
 
   try{
-    const res = await fetch(GROQ_BASE+'/chat/completions',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+key
-      },
-      body:JSON.stringify({
-        model: GROQ_MODEL,
-        max_tokens: GROQ_MAX_TOK,
-        messages:[
-          {role:'system', content: AI_SYSTEM[section]||AI_SYSTEM['ai-research']},
-          ...AI_HISTORY[section]
-        ]
-      })
-    });
-
-    if(res.status===401){
-      thinking.innerHTML='<div class="ai-label">⚠️ Invalid Key</div>Your Groq key was rejected. Go to <strong>⚙️ Settings</strong>, clear the key, and paste a new one from console.groq.com';
-      return;
-    }
-    if(res.status===429){
-      thinking.innerHTML='<div class="ai-label">⚠️ Rate Limited</div>Too many requests. Wait a minute and try again — Groq free tier allows 30 requests per minute.';
-      return;
-    }
-    if(!res.ok){
-      thinking.innerHTML='<div class="ai-label">⚠️ Error '+res.status+'</div>Something went wrong. Try again in a moment.';
-      return;
-    }
-
-    const data  = await res.json();
-    const reply = data.choices?.[0]?.message?.content || 'No response received. Try again.';
+    const reply = await callAI([
+      {role:'system', content: AI_SYSTEM[section]||AI_SYSTEM['ai-research']},
+      ...AI_HISTORY[section]
+    ], {max_tokens: GROQ_MAX_TOK});
     thinking.innerHTML = '<div class="ai-label">'+getAILabel(section)+'</div>'+
       reply.replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
     AI_HISTORY[section].push({role:'assistant',content:reply});
   }catch(e){
-    thinking.innerHTML='<div class="ai-label">'+getAILabel(section)+'</div>Connection error — check your internet and try again.<br><small style="color:var(--text3);">'+e.message+'</small>';
+    const s=e.status; let m='Connection error — check your internet and try again.';
+    if(e.code==='NOKEY') m='No AI key saved. Add a Gemini or Groq key in ⚙️ Settings.';
+    else if(s===401||s===403) m='Your API key was rejected. Re-check your Gemini/Groq key in ⚙️ Settings.';
+    else if(s===429) m='Rate limited — wait a minute and try again.';
+    thinking.innerHTML='<div class="ai-label">'+getAILabel(section)+'</div>'+m+'<br><small style="color:var(--text3);">'+(e.message||'')+'</small>';
   }
   msgs.scrollTop=msgs.scrollHeight;
 }
@@ -5348,10 +5433,9 @@ async function writePartInline(partNum){
   const txt=document.getElementById('story-ai-text');
   const lbl=document.getElementById('story-ai-part-label');
   if(!out||!txt) return;
-  const key=getGroqKey();
-  if(!key){
+  if(!hasAnyAIKey()){
     out.style.display='block';
-    txt.innerHTML='<span style="color:var(--red);">No Groq API key saved. Go to ⚙️ Settings and paste your key to use AI writing.</span>';
+    txt.innerHTML='<span style="color:var(--red);">No AI key saved. Go to ⚙️ Settings and paste a Gemini or Groq key to use AI writing.</span>';
     return;
   }
   lbl.textContent='🤖 AI — Part '+_inlinePartNum;
@@ -5360,15 +5444,10 @@ async function writePartInline(partNum){
   out.scrollIntoView({behavior:'smooth'});
   const prompt='Continue the African American family genealogy story "The Missing Branch." This is Part '+_inlinePartNum+'. The story so far: A researcher named Leona discovered that her ancestor changed their identity — from Elijah Carter to Elias Carter — to survive racial violence in post-Reconstruction America. A woman helped him escape and kept his secret. Leona witnessed this in a vision through her genealogy dashboard. Now write Part '+_inlinePartNum+': what does Leona do next? How does this discovery reshape her understanding of herself and her family? Write 5 vivid, atmospheric paragraphs in the same literary style. Weave in real African American history of the era. End with a powerful, resonant final line.';
   try{
-    const res=await fetch(GROQ_BASE+'/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:GROQ_MODEL,max_tokens:GROQ_MAX_TOK,messages:[{role:'system',content:'You are a master literary storyteller specializing in African American genealogy fiction. Write in a dignified, atmospheric, emotionally resonant style.'},{role:'user',content:prompt}]})
-    });
-    if(res.status===401){txt.innerHTML='<span style="color:var(--red);">Invalid API key. Check ⚙️ Settings.</span>';return;}
-    if(!res.ok){txt.innerHTML='<span style="color:var(--red);">Error '+res.status+'. Try again.</span>';return;}
-    const data=await res.json();
-    const reply=data.choices?.[0]?.message?.content||'No response. Try again.';
+    const reply=await callAI([
+      {role:'system',content:'You are a master literary storyteller specializing in African American genealogy fiction. Write in a dignified, atmospheric, emotionally resonant style.'},
+      {role:'user',content:prompt}
+    ], {max_tokens:GROQ_MAX_TOK});
     txt.innerHTML=reply.replace(/\n\n/g,'</p><p style="margin-bottom:14px;">').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
     txt.innerHTML='<p style="margin-bottom:14px;">'+txt.innerHTML+'</p>';
     // Update continue button for next part
@@ -7396,20 +7475,10 @@ Respond ONLY with valid JSON (no markdown):
 All percentages must sum to 100.`;
 
   try{
-    const res=await fetch(GROQ_BASE+'/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({
-        model:GROQ_MODEL, max_tokens:800,
-        messages:[
-          {role:'system',content:'You are a DNA ancestry expert. Return only valid JSON with no markdown or extra text.'},
-          {role:'user',content:prompt}
-        ]
-      })
-    });
-    if(!res.ok){throw new Error('API error '+res.status);}
-    const data=await res.json();
-    const reply=data.choices?.[0]?.message?.content||'';
+    const reply=await callAI([
+      {role:'system',content:'You are a DNA ancestry expert. Return only valid JSON with no markdown or extra text.'},
+      {role:'user',content:prompt}
+    ], {max_tokens:800});
     const clean=reply.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(clean);
     const pcts=parsed.percentages||{};
@@ -10751,23 +10820,13 @@ async function generateAncestorQuote(){
   txt.textContent='Generating…';
   lbl.textContent='🕯️ Voice of '+name;
 
-  const key = getGroqKey();
-  if(!key){
-    txt.textContent='No API key saved. Go to ⚙️ Settings and paste your Groq key to use this feature.';
+  if(!hasAnyAIKey()){
+    txt.textContent='No AI key saved. Go to ⚙️ Settings and paste a Gemini or Groq key to use this feature.';
     return;
   }
   try {
-    const resp = await fetch(GROQ_BASE+'/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({
-        model:GROQ_MODEL, max_tokens:800,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await resp.json();
-    const text = data.choices?.[0]?.message?.content || 'Could not generate. Try again.';
-    txt.textContent = text;
+    const text = await callAI([{role:'user',content:prompt}], {max_tokens:800});
+    txt.textContent = text || 'Could not generate. Try again.';
     txt._lastGenerated = {name, text};
   } catch(e){ txt.textContent='Connection error. Check internet and try again.'; }
 }
@@ -11195,7 +11254,10 @@ const _navExtensions = {
     if(el) el.textContent = lastSaveTime ? 'Last saved: '+lastSaveTime.toLocaleTimeString() : 'Not yet saved this session';
     const keyInput = document.getElementById('groq-key-input');
     if(keyInput) keyInput.value = '';
+    const gInput = document.getElementById('gemini-key-input');
+    if(gInput) gInput.value = '';
     updateGroqStatus();
+    updateGeminiStatus();
   }
 };
 
