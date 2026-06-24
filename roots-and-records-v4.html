@@ -2156,6 +2156,11 @@ You can also paste any free-form research text and it will be imported as a Rese
       <button class="btn btn-ghost btn-sm" onclick="askAI('ai-research','What is the Freedmen\'s Bureau and how do I use those records?')">🏛️ Freedmen\'s Bureau</button>
       <button class="btn btn-ghost btn-sm" onclick="askAI('ai-research','What does this census entry mean for African Americans in 1880?')">📊 Census Help</button>
     </div>
+    <details id="rm-panel" class="card" style="margin-bottom:12px;padding:12px 14px;" ontoggle="if(this.open)renderResearchMemory()">
+      <summary style="cursor:pointer;font-weight:700;color:var(--burg2);font-size:14px;list-style:none;">🧠 Research Memory <span id="rm-count" style="font-size:11px;color:var(--text3);font-weight:400;"></span></summary>
+      <div style="font-size:11px;color:var(--text3);margin:6px 0 10px;">Facts you save here are fed back to the AI on related questions — across tree switches. Use 🧠 <strong>Remember this</strong> under an answer, or add facts manually.</div>
+      <div id="rm-body"></div>
+    </details>
     <div class="ai-wrap">
       <div class="ai-messages" id="ai-research-msgs">
         <div class="ai-msg ai"><div class="ai-label">🔮 AI Research Assistant</div>Hello! I'm your genealogy research assistant, specializing in African American ancestry. Ask me anything — about records, research strategies, historical context, or how to break through a brick wall. What are you working on?</div>
@@ -3553,6 +3558,7 @@ function nav(id,lineName,lineColor,lineKey){
   if(id==='migration') initLeafletMap();
   if(id==='importexport') setTimeout(refreshExportPreview, 100);
   if(id==='ai-tree-lab') tlModeHelp();
+  if(id==='ai-research') renderResearchMemory();
 }
 
 function globalSearch(val){
@@ -5454,12 +5460,15 @@ async function sendAI(section){
   const thinking = addAIMsg(msgs,'ai','<span class="spin"></span> Thinking…');
 
   try{
+    const factsBlock = (section==='ai-research') ? rmFactsBlock(text) : '';
     const reply = await callAI([
-      {role:'system', content: (AI_SYSTEM[section]||AI_SYSTEM['ai-research']) + treeContext()},
+      {role:'system', content: (AI_SYSTEM[section]||AI_SYSTEM['ai-research']) + treeContext() + factsBlock},
       ...AI_HISTORY[section]
     ], {max_tokens: GROQ_MAX_TOK});
-    thinking.innerHTML = '<div class="ai-label">'+getAILabel(section)+'</div>'+
+    let rendered = '<div class="ai-label">'+getAILabel(section)+'</div>'+
       reply.replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    if(section==='ai-research'){ const ansKey=rmNewId('a-'); RM_ANSWERS[ansKey]=reply; rendered += rmRememberBtnHtml(ansKey); }
+    thinking.innerHTML = rendered;
     AI_HISTORY[section].push({role:'assistant',content:reply});
   }catch(e){
     const s=e.status; let m='Connection error — check your internet and try again.';
@@ -5497,7 +5506,183 @@ function addAIMsg(container,role,html){
   return div;
 }
 
+// ═══════════════════════════════════════════════
+//  RESEARCH MEMORY (design §4) — global, on-demand capture + manual add
+//  Keys are GLOBAL (not per-tree): survive tree switches, never in a tree blob.
+// ═══════════════════════════════════════════════
+const RM_FACTS_KEY = 'rr_research_facts';
+const RM_LOG_KEY   = 'rr_research_log';
+const RM_FACT_CAP_INJECT = 15;
+const RM_CONDENSE_THRESHOLD = 40;
+const RM_ANSWERS = {}; // ansKey -> assistant reply text (for "Remember this")
 
+function getResearchFacts(){ try { return JSON.parse(localStorage.getItem(RM_FACTS_KEY))||[]; } catch(e){ return []; } }
+function setResearchFacts(a){ localStorage.setItem(RM_FACTS_KEY, JSON.stringify(a||[])); }
+function getResearchLog(){ try { return JSON.parse(localStorage.getItem(RM_LOG_KEY))||[]; } catch(e){ return []; } }
+function setResearchLog(a){ localStorage.setItem(RM_LOG_KEY, JSON.stringify(a||[])); }
+
+function rmNorm(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function rmNewId(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function addResearchFact(f){
+  if(!f || !rmNorm(f.text)) return false;
+  const facts = getResearchFacts();
+  const key = rmNorm(f.text);
+  if(facts.some(x=>rmNorm(x.text)===key)) return false; // dedupe by normalized text
+  const entry = { id: rmNewId('rf-'), text: String(f.text).trim(),
+    person:f.person||'', surname:f.surname||'', place:f.place||'', recordType:f.recordType||'',
+    addedAt: new Date().toISOString() };
+  if(f.sources && f.sources.length) entry.sources = f.sources;
+  facts.push(entry); setResearchFacts(facts); return true;
+}
+function updateResearchFact(id, patch){
+  const facts = getResearchFacts(); const i = facts.findIndex(x=>x.id===id); if(i<0) return;
+  facts[i] = Object.assign({}, facts[i], patch); setResearchFacts(facts); renderResearchMemory();
+}
+function deleteResearchFact(id){ setResearchFacts(getResearchFacts().filter(x=>x.id!==id)); renderResearchMemory(); }
+function addResearchLog(entry){
+  const log = getResearchLog();
+  log.unshift(Object.assign({ id: rmNewId('rl-'), when:new Date().toISOString() }, entry));
+  setResearchLog(log.slice(0,100));
+}
+function clearResearchLog(){ if(confirm('Clear the research activity log? Saved facts are kept.')){ setResearchLog([]); renderResearchMemory(); } }
+
+// Array-tolerant JSON extraction (the object form lives in the Tree Lab as extractJSON).
+function extractJSONArray(text){
+  if(!text) return null;
+  let s = String(text).trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  const start = s.indexOf('[');
+  if(start<0){ const o = (typeof extractJSON==='function')?extractJSON(s):null; return o?[o]:null; }
+  let depth=0, end=-1;
+  for(let i=start;i<s.length;i++){ if(s[i]==='[')depth++; else if(s[i]===']'){ depth--; if(depth===0){ end=i; break; } } }
+  if(end<0) return null;
+  try { return JSON.parse(s.slice(start,end+1)); } catch(e){ return null; }
+}
+
+// ── Retrieval (keyword match, no embeddings, cap 15) ──
+function rmTokens(s){ return rmNorm(s).split(/[^a-z0-9]+/).filter(w=>w.length>2); }
+function relevantFacts(queryText, cap){
+  cap = cap||RM_FACT_CAP_INJECT;
+  const facts = getResearchFacts();
+  if(!facts.length) return [];
+  const qset = new Set(rmTokens(queryText));
+  if(!qset.size) return facts.slice(-cap); // no query → most recent
+  const scored = facts.map(f=>{
+    let score=0;
+    rmTokens([f.text,f.person,f.surname,f.place,f.recordType].join(' ')).forEach(w=>{ if(qset.has(w)) score++; });
+    [f.person,f.surname,f.place].forEach(t=>{ if(t && qset.has(rmNorm(t))) score+=2; }); // tag hits weigh more
+    return {f, score};
+  }).filter(s=>s.score>0).sort((a,b)=>b.score-a.score);
+  return scored.slice(0,cap).map(s=>s.f);
+}
+// Prompt block of relevant facts — always labeled as the user's notes, never as sources.
+function rmFactsBlock(queryText, cap){
+  const rel = relevantFacts(queryText, cap);
+  if(!rel.length) return '';
+  return "\n\n--- KNOWN FACTS FROM THE RESEARCHER'S PRIOR WORK (treat as the researcher's own notes, NOT as new sources or verified citations) ---\n"
+    + rel.map(f=>'- '+f.text + ([f.person,f.surname,f.place].filter(Boolean).length?(' ['+[f.person,f.surname,f.place].filter(Boolean).join(' / ')+']'):'')).join('\n');
+}
+
+// ── Capture: "Remember this" (one extraction call) ──
+function rmRememberBtnHtml(ansKey){
+  return '<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="rememberAnswer(\''+ansKey+'\',this)">🧠 Remember this</button></div>';
+}
+async function rememberAnswer(ansKey, btn){
+  const text = RM_ANSWERS[ansKey]; if(!text) return;
+  if(!hasAnyAIKey()){ showToast('Add an AI key in ⚙️ Settings to auto-extract, or add facts manually in Research Memory.'); return; }
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Extracting…'; }
+  try {
+    const reply = await callAI([
+      {role:'system', content:'You extract durable genealogy research facts from an assistant answer so the researcher can reuse them later. Return ONLY a JSON array. Each item: {"text":"a concise standalone fact or lead worth remembering","person":"","surname":"","place":"","recordType":""}. Include only concrete, reusable findings/leads — skip pleasantries and generic advice. Max 6 items. If nothing is worth saving, return [].'},
+      {role:'user', content: text}
+    ], {max_tokens:1024});
+    let arr = extractJSONArray(reply); if(!Array.isArray(arr)) arr=[];
+    let added=0; arr.forEach(f=>{ if(f && f.text && addResearchFact(f)) added++; });
+    showToast(added ? ('🧠 Saved '+added+' fact'+(added>1?'s':'')+' to Research Memory.') : 'Nothing new to remember from this answer.');
+    renderResearchMemory();
+  } catch(e){ showToast('Could not extract facts — try again or add one manually.'); }
+  if(btn){ btn.disabled=false; btn.innerHTML='🧠 Remember this'; }
+}
+
+// ── Manual add / edit ──
+function rmAddManual(){
+  const t = document.getElementById('rm-add-text');
+  if(!t || !t.value.trim()){ showToast('Enter a fact to add.'); return; }
+  const g = id => (document.getElementById(id)||{}).value || '';
+  if(addResearchFact({ text:t.value.trim(), person:g('rm-add-person'), surname:g('rm-add-surname'), place:g('rm-add-place'), recordType:g('rm-add-record') })){
+    showToast('🧠 Fact added.'); t.value='';
+    ['rm-add-person','rm-add-surname','rm-add-place','rm-add-record'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+    renderResearchMemory();
+  } else showToast('That fact is already in memory.');
+}
+function rmEditFact(id){
+  const f = getResearchFacts().find(x=>x.id===id); if(!f) return;
+  const v = prompt('Edit fact:', f.text); if(v==null) return;
+  if(!v.trim()){ showToast('Fact text cannot be empty.'); return; }
+  updateResearchFact(id, {text:v.trim()});
+}
+
+// ── Condense (one summarization pass; user confirms before replace) ──
+async function condenseMemory(){
+  const facts = getResearchFacts();
+  if(facts.length<2){ showToast('Not enough facts to condense.'); return; }
+  if(!hasAnyAIKey()){ showToast('Add an AI key in ⚙️ Settings to condense memory.'); return; }
+  if(!confirm('Condense '+facts.length+' facts into a smaller deduped set? Your current facts will be replaced (uses one AI call).')) return;
+  const btn = document.getElementById('rm-condense-btn'); if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Condensing…'; }
+  try {
+    const reply = await callAI([
+      {role:'system', content:'You deduplicate and merge a list of genealogy research facts. Combine duplicates and overlaps, keep every distinct concrete finding, drop nothing important. Return ONLY a JSON array of {"text":"","person":"","surname":"","place":"","recordType":""}.'},
+      {role:'user', content: JSON.stringify(facts.map(f=>({text:f.text,person:f.person,surname:f.surname,place:f.place,recordType:f.recordType})))}
+    ], {max_tokens:4096});
+    const arr = extractJSONArray(reply);
+    if(Array.isArray(arr) && arr.length){
+      const seen=new Set(), out=[];
+      arr.filter(f=>f&&f.text).forEach(f=>{ const k=rmNorm(f.text); if(!seen.has(k)){ seen.add(k);
+        out.push({ id:rmNewId('rf-'), text:String(f.text).trim(), person:f.person||'', surname:f.surname||'', place:f.place||'', recordType:f.recordType||'', addedAt:new Date().toISOString() }); } });
+      setResearchFacts(out); showToast('🧠 Condensed to '+out.length+' facts.'); renderResearchMemory();
+    } else showToast('Condense failed — facts unchanged.');
+  } catch(e){ showToast('Condense failed — facts unchanged.'); }
+  if(btn){ btn.disabled=false; btn.innerHTML='🧹 Condense memory'; }
+}
+
+// ── Panel render ──
+function renderResearchMemory(){
+  const cnt = document.getElementById('rm-count');
+  const facts = getResearchFacts(), log = getResearchLog();
+  if(cnt) cnt.textContent = facts.length ? ('· '+facts.length+' fact'+(facts.length>1?'s':'')) : '· empty';
+  const body = document.getElementById('rm-body'); if(!body) return;
+  let h = '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;margin-bottom:10px;">'
+    +'<input class="fi" id="rm-add-text" placeholder="Add a fact to remember…" style="font-size:12px;margin-bottom:6px;width:100%;">'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">'
+    +'<input class="fi" id="rm-add-person" placeholder="person" style="font-size:11px;flex:1;min-width:90px;">'
+    +'<input class="fi" id="rm-add-surname" placeholder="surname" style="font-size:11px;flex:1;min-width:90px;">'
+    +'<input class="fi" id="rm-add-place" placeholder="place" style="font-size:11px;flex:1;min-width:90px;">'
+    +'<input class="fi" id="rm-add-record" placeholder="record type" style="font-size:11px;flex:1;min-width:90px;"></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-gold btn-sm" style="font-size:11px;" onclick="rmAddManual()">➕ Add fact</button>'
+    + (facts.length>=RM_CONDENSE_THRESHOLD ? '<button class="btn btn-ghost btn-sm" id="rm-condense-btn" style="font-size:11px;" onclick="condenseMemory()">🧹 Condense memory</button>' : '')
+    +'</div></div>';
+  if(!facts.length){
+    h += '<div style="font-size:12px;color:var(--text3);padding:8px 0;">No saved facts yet. Use 🧠 <strong>Remember this</strong> under an answer, or add one above. These notes are fed back to the AI on related questions.</div>';
+  } else {
+    h += facts.map(f=>{
+      const tags = [f.person,f.surname,f.place,f.recordType].filter(Boolean)
+        .map(t=>'<span style="font-size:10px;background:rgba(255,255,255,0.07);color:var(--text3);padding:1px 6px;border-radius:6px;margin-right:4px;">'+tlEsc(t)+'</span>').join('');
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06);">'
+        +'<div style="font-size:12px;color:var(--text2);line-height:1.5;">'+tlEsc(f.text)+(tags?'<div style="margin-top:4px;">'+tags+'</div>':'')+'</div>'
+        +'<div style="white-space:nowrap;"><button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;" onclick="rmEditFact(\''+f.id+'\')">✏️</button> '
+        +'<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;" onclick="deleteResearchFact(\''+f.id+'\')">🗑️</button></div></div>';
+    }).join('');
+  }
+  if(log.length){
+    h += '<div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text3);">Recent analyses</div>'
+      +'<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;" onclick="clearResearchLog()">Clear log</button></div>'
+      + log.slice(0,10).map(e=>'<div style="font-size:11px;color:var(--text3);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
+          +(e.mode?'<strong>'+tlEsc(e.mode)+'</strong> · ':'')+tlEsc(e.summary||'')+'</div>').join('')
+      +'</div>';
+  }
+  body.innerHTML = h;
+}
 
 // ═══════════════════════════════════════════════
 //  AI TREE LAB — review active tree → propose alternate trees → save
@@ -5575,13 +5760,17 @@ const TL_SCHEMA_NOTE = `Return ONLY valid JSON, no prose, in exactly this shape:
 // Multi-step loop: (1) plan/analyze with grounding, (2) synthesize strict JSON.
 async function runResearchLoop(mode, snap){
   const snapStr = JSON.stringify(snap.people);
+  // Inject relevant prior-research notes (design §4) keyed on this tree's lines/people/places.
+  const memQuery = [snap.treeName, (snap.lines||[]).join(' '),
+    (snap.people||[]).map(p=>[p.name,p.surname,p.place].filter(Boolean).join(' ')).join(' ')].join(' ');
+  const factsBlk = (typeof rmFactsBlock==='function') ? rmFactsBlock(memQuery) : '';
   // Step 1 — Plan & analyze (grounded on Gemini leg for real sources)
   tlStatus('Planning &amp; analyzing your tree…');
   let analysis = '', sources = [];
   try {
     const meta = await callAI([
       {role:'system', content: RR_TREE_LAB_PERSONA},
-      {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}\n\nFirst, think step by step: what does this tree show, what's missing, and which specific record collections/repositories would help? Name real, current sources where possible.`}
+      {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}${factsBlk}\n\nFirst, think step by step: what does this tree show, what's missing, and which specific record collections/repositories would help? Name real, current sources where possible.`}
     ], {grounded:true, returnMeta:true, max_tokens: 2048});
     if(meta && typeof meta==='object'){ analysis = meta.text||''; sources = meta.sources||[]; }
     else analysis = meta||'';
@@ -5595,7 +5784,7 @@ async function runResearchLoop(mode, snap){
     try {
       reply = await callAI([
         {role:'system', content: RR_TREE_LAB_PERSONA},
-        {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}\n\nAnalysis so far:\n${analysis||'(none)'}\n\n${TL_SCHEMA_NOTE.replace('<mode>',mode)}${nudge}`}
+        {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}${factsBlk}\n\nAnalysis so far:\n${analysis||'(none)'}\n\n${TL_SCHEMA_NOTE.replace('<mode>',mode)}${nudge}`}
       ], {max_tokens: 4096});
       rawReply = reply || '';
     } catch(e){ lastErr = e; reply=''; }
@@ -5641,6 +5830,9 @@ async function treeLabAnalyze(){
       });
     }
     TL_LAST = { mode, candidates: result.candidates, summary: result.summary||'', sources: result._sources||[] };
+    // Episodic memory (design §4 / §7): record this analysis for later runs.
+    try { addResearchLog({ mode, treeId: getActiveTreeId(),
+      summary: (result.summary||'').slice(0,300) || (result.candidates.length+' candidate(s) proposed for '+snap.treeName) }); } catch(_e){}
     renderCandidates();
   }catch(e){
     tlStatus(false);
