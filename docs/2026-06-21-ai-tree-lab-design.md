@@ -267,3 +267,55 @@ in layout — only the data source differs (candidate object vs. saved tree blob
 - **Persona:** research answers reflect AA-genealogy specifics (e.g. suggests Freedmen's
   Bureau / 1870 brick-wall strategy) rather than generic advice.
 - SNP/genomic reference DB (106 rsIDs) untouched — verify count unchanged after build.
+
+---
+
+## §4 Implementation — Research Memory (locked 2026-06-24)
+
+Implements design §4. Fact capture is **on-demand + manual** (no silent
+auto-extraction): a "Remember this" button runs one extraction call, and the panel
+has a manual add form. The episodic log is written automatically (no extra AI call).
+
+### Storage (global keys — NOT per-tree, survive tree switches, never in a tree blob)
+- `rr_research_facts` = `[{id, text, person, surname, place, recordType, sources?, addedAt}]`
+- `rr_research_log`   = `[{id, when, summary, treeId, mode}]`
+- Helpers: `getResearchFacts()/setResearchFacts(a)`, `addResearchFact(f)` (dedupe by
+  normalized lowercase `text`), `updateResearchFact(id,patch)`, `deleteResearchFact(id)`,
+  `getResearchLog()/addResearchLog(entry)/clearResearchLog()`. IDs via existing id scheme
+  (no `Date.now`/`Math.random` reliance for dedupe key — use normalized text).
+
+### Capture
+- **`🧠 Remember this`** button rendered under each AI Research Assistant answer →
+  one `callAI` extraction → expects JSON array `[{text,person,surname,place,recordType}]`
+  (reuse `extractJSON`, tolerate a bare array) → `addResearchFact` each (deduped) →
+  toast + `renderResearchMemory()`.
+- **`➕ Add fact`** manual form in the panel (text required; person/surname/place/
+  recordType optional).
+- `treeLabAnalyze` appends `{when, summary:result.summary, treeId:activeTree().id, mode}`
+  to `rr_research_log` after a successful analysis.
+
+### Retrieval / injection (keyword match, no embeddings, cap 15)
+- `relevantFacts(queryText, cap=15)` — tokenize query, score each fact by overlap of its
+  tags (person/surname/place/recordType) + `text` words with the query; return top `cap`.
+- **AI Research chat:** in `sendAI('ai-research', …)` prepend a system note
+  `"Known facts from the researcher's prior work (treat as notes, not new sources):\n- …"`.
+- **Tree Lab:** `runResearchLoop` injects facts relevant to the snapshot's surnames/places.
+- **Condense:** `condenseMemory()` — one-shot `callAI` summarization merging facts into a
+  smaller deduped set when the store is large (manual button; user confirms before replace).
+- Injected facts are always labeled prior-research notes — never presented as confirmed
+  citations (no-made-up-data rule).
+
+### Panel UI (in the AI Research Assistant page)
+- Collapsible **`🧠 Research Memory`** section:
+  - Fact list: each row shows `text` + tag chips, with ✏️ edit (inline) and 🗑️ delete.
+  - `➕ Add fact` form.
+  - `🧹 Condense memory` button (shown when facts exceed a threshold, ~40).
+  - Recent **episodic log** (read-only, last ~10) with a `Clear log` button.
+- `renderResearchMemory()` repaints the panel; called on capture/add/edit/delete/condense
+  and when navigating to the AI Research page.
+
+### Guardrails
+- Facts written ONLY on explicit user action (button or manual add) — never silently.
+- Keys are global; excluded from `getAllData()`/tree blobs and from `TRACKED_KEYS`-style
+  per-tree sync. Not synced to PocketBase.
+- SNP/genomic reference DB (106 rsIDs) untouched — verify count unchanged after build.
