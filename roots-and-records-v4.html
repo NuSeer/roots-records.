@@ -79,6 +79,21 @@ body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-fam
 .ph-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;}
 .pb{padding:22px 26px 40px;flex:1;}
 
+/* ── TREE FOCUS MODE (collapsible sidebar + topbar) ── */
+body.tree-focus .sidebar{display:none;}
+body.tree-focus #page-pedigree .ph{display:none;}
+body.tree-focus #page-composite .ph{display:none;}
+body.tree-focus #page-pedigree .pb,
+body.tree-focus #page-composite .pb{padding:8px;}
+body.tree-focus #pedigree-tree{height:calc(100vh - 96px);min-height:0;}
+#tree-focus-exit{display:none;position:fixed;top:12px;right:16px;z-index:200;}
+body.tree-focus #tree-focus-exit{display:inline-flex;}
+/* Tree toolbar (zoom / depth / fullscreen) */
+.tree-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.tz-btn{width:30px;height:30px;min-height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);color:var(--gold);border:1px solid rgba(212,168,67,0.3);border-radius:6px;cursor:pointer;font-size:15px;font-weight:700;line-height:1;}
+.tz-btn:hover{background:rgba(212,168,67,0.18);border-color:var(--gold);}
+.tz-readout{font-size:11px;color:var(--text3);min-width:42px;text-align:center;}
+
 /* BUTTONS */
 .btn{padding:7px 16px;border-radius:7px;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.03em;touch-action:manipulation;min-height:36px;}
 .btn-gold{background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:#2a0a10;}
@@ -512,6 +527,7 @@ svg.net-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events
 
     <div class="ng-label">AI Assistant</div>
     <div class="ni" onclick="nav('ai-research')"><span class="ic">🔮</span><span class="lb">AI Research Assistant</span></div>
+    <div class="ni" onclick="nav('ai-tree-lab')"><span class="ic">🧪</span><span class="lb">AI Tree Lab</span></div>
     <div class="ni" onclick="nav('ai-dna')"><span class="ic">🧬</span><span class="lb">AI DNA Interpreter</span></div>
     <div class="ni" onclick="nav('ai-brick')"><span class="ic">🧱</span><span class="lb">AI Brick Wall Breaker</span></div>
     <div class="ni" onclick="nav('ai-interview')"><span class="ic">🎙️</span><span class="lb">AI Family Interview</span></div>
@@ -539,6 +555,7 @@ svg.net-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events
 
 <!-- ═══ MAIN ═══ -->
 <div class="main" id="mainArea">
+<button id="tree-focus-exit" class="btn btn-gold btn-sm" onclick="toggleTreeFocus()">⛶ Exit full screen</button>
 
 <!-- ══ HOME ══ -->
 <div class="page active" id="page-home">
@@ -1835,7 +1852,7 @@ You can also paste any free-form research text and it will be imported as a Rese
 <!-- ══ REPORTS ══ -->
 <div class="page" id="page-reports">
   <div class="ph"><div><div class="ph-title">📄 <span>Reports</span></div><div class="ph-desc">Charts, reports, and lists — generate, preview, and print</div></div>
-    <div class="ph-actions"><button class="btn btn-back" onclick="nav('home')">← Home</button><button class="btn btn-back" onclick="window.print()">🖨️ Print Report</button><button class="btn btn-ai btn-sm" onclick="aiGenerateReport()">🤖 AI Write Report</button></div>
+    <div class="ph-actions"><button class="btn btn-back" onclick="nav('home')">← Home</button><button class="btn btn-back" onclick="window.print()">🖨️ Print Report</button><button class="btn btn-ai btn-sm" onclick="aiGenerateReport()">🤖 AI Write Report</button><button class="btn btn-ghost btn-sm" onclick="alternateTreeReport()">🧪 Alternate Tree Report</button></div>
   </div>
   <div class="pb">
 
@@ -2152,6 +2169,36 @@ You can also paste any free-form research text and it will be imported as a Rese
   </div>
 </div>
 
+<!-- ══ AI TREE LAB ══ -->
+<div class="page" id="page-ai-tree-lab">
+  <div class="ph"><div><div class="ph-title">🧪 AI <span>Tree Lab</span></div><div class="ph-desc">Let AI review your active tree and propose alternate trees you can save — split by line, hypothesis, clean-up, or competing theories</div></div><button class="btn btn-back" onclick="nav('home')">← Home</button></div>
+  <div class="pb">
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:1;min-width:240px;">
+          <label class="fl">Mode</label>
+          <select class="fs" id="tl-mode" onchange="tlModeHelp()">
+            <option value="split">🌳 Split into separate line-trees</option>
+            <option value="hypothesis">🔮 Hypothesis / what-if (proposes ancestors)</option>
+            <option value="cleanup">🧹 Clean-up copy (flags errors/dupes)</option>
+            <option value="competing">⚖️ Competing theories (2–3 versions)</option>
+          </select>
+          <div id="tl-mode-help" style="font-size:11px;color:var(--text3);margin-top:5px;"></div>
+        </div>
+        <div>
+          <button class="btn btn-gold" id="tl-run-btn" onclick="treeLabAnalyze()">🔬 Analyze my tree</button>
+        </div>
+      </div>
+      <div id="tl-status" style="font-size:12px;color:var(--burg2);margin-top:10px;display:none;"></div>
+    </div>
+    <div id="tl-results"></div>
+    <div id="tl-save-row" style="display:none;margin-top:14px;">
+      <button class="btn btn-gold" onclick="saveSelectedCandidates()">💾 Save selected (<span id="tl-save-count">0</span>) as new trees</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">Nothing is saved until you check candidates and click save. Saved trees appear in the tree menu.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ AI DNA INTERPRETER ══ -->
 <div class="page" id="page-ai-dna">
   <div class="ph"><div><div class="ph-title">🧬 AI DNA <span>Interpreter</span></div><div class="ph-desc">Paste DNA results — AI explains them in plain language</div></div><button class="btn btn-back" onclick="nav('home')">← Home</button></div>
@@ -2438,9 +2485,26 @@ You can also paste any free-form research text and it will be imported as a Rese
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
         <div>
           <div class="card-label" style="margin:0;">Pedigree Chart</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;">5 generations · You on right · Ancestors branch left · Click any box to view that person</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;">Ancestry-style · You on right · Ancestors branch left · Click any box to view that person</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:12px;color:var(--text3);">Generations:</label>
+          <select class="fs" id="pedigree-depth" style="font-size:12px;padding:4px 6px;width:auto;" onchange="buildPedigreeTree()">
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10" selected>10</option>
+          </select>
+          <div class="tree-toolbar">
+            <button class="tz-btn" onclick="pedZoom(-1)" title="Zoom out">−</button>
+            <span class="tz-readout" id="ped-zoom-readout">100%</span>
+            <button class="tz-btn" onclick="pedZoom(1)" title="Zoom in">+</button>
+            <button class="tz-btn" onclick="pedZoomReset()" title="Fit / reset" style="font-size:13px;">⤢</button>
+            <button class="tz-btn" onclick="toggleTreeFocus()" title="Full screen (hide menus)" style="font-size:13px;">⛶</button>
+          </div>
           <label style="font-size:12px;color:var(--text3);">Root person:</label>
           <div style="position:relative;">
             <input class="fi" id="pedigree-root-input" placeholder="Type a name to search…"
@@ -2501,7 +2565,8 @@ You can also paste any free-form research text and it will be imported as a Rese
       <option value="Composite">Composite</option>
     </select>
     <select class="fs" id="composite-view-mode" style="font-size:11px;padding:3px 6px;" onchange="buildCompositeTree()">
-      <option value="chart">Chart</option>
+      <option value="chart">Chart (ancestry)</option>
+      <option value="full">Full Tree (all linked)</option>
       <option value="birth">By Birth Year</option>
       <option value="alpha">Alphabetical</option>
     </select>
@@ -3487,6 +3552,7 @@ function nav(id,lineName,lineColor,lineKey){
   if(id==='network') buildNetwork();
   if(id==='migration') initLeafletMap();
   if(id==='importexport') setTimeout(refreshExportPreview, 100);
+  if(id==='ai-tree-lab') tlModeHelp();
 }
 
 function globalSearch(val){
@@ -5099,7 +5165,7 @@ function printReport(){
     @media print{@page{size:${isChart?'landscape':'portrait'};margin:1cm;}}
   </style></head><body>
   <h2>${type}</h2>
-  <p class="meta">Roots &amp; Records · ${new Date().toLocaleDateString()} · Foreman/Drewitt, Smith (Elsie), Reid, Smith (Erma)</p>
+  <p class="meta">Roots &amp; Records · ${new Date().toLocaleDateString()}${(typeof getLines==='function' && getLines().filter(l=>l!=='Unknown'&&l!=='Composite').length) ? ' · '+getLines().filter(l=>l!=='Unknown'&&l!=='Composite').join(', ') : ''}</p>
   ${html}
   </body></html>`],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -5119,12 +5185,34 @@ async function aiGenerateReport(){
 // ═══════════════════════════════════════════════
 //  AI CHAT
 // ═══════════════════════════════════════════════
-// Family context encoded for privacy
-const _fc = atob('VVNFUidTIEZBTUlMWSBMSU5FUzoKRkFUSEVSJ1MgU0lERSAoUGF0ZXJuYWwpOgoxLiBGb3JlbWFuIC8gRHJld2l0dCAoTGF3c29uKSDigJQgRmF0aGVyJ3MgcGF0ZXJuYWwgZ3JhbmRwYXJlbnRzCjIuIFNtaXRoIChFbHNpZSkg4oCUIEZhdGhlcidzIG1hdGVybmFsIGdyYW5kcGFyZW50cwoKTU9USEVSJ1MgU0lERSAoTWF0ZXJuYWwpOgozLiBSZWlkIChDaGFybGllKSDigJQgTW90aGVyJ3MgcGF0ZXJuYWwgZ3JhbmRwYXJlbnRzCjQuIFNtaXRoIChFcm1hKSDigJQgTW90aGVyJ3MgbWF0ZXJuYWwgZ3JhbmRwYXJlbnRzCgpDT01QT1NJVEUgTUFTVEVSIFRSRUUgY29tYmluZXMgYWxsIGZvdXIgbGluZXMuCgpBbHdheXMgcmVmZXJlbmNlIHRoZXNlIHNwZWNpZmljIGZhbWlseSBsaW5lcy4gVGhpcyBpcyBhbiBBZnJpY2FuIEFtZXJpY2FuIGdlbmVhbG9neSBkYXNoYm9hcmQgZm9jdXNlZCBvbiBwb3N0LXNsYXZlcnkgcmVzZWFyY2gsIFJlY29uc3RydWN0aW9uIGVyYSwgR3JlYXQgTWlncmF0aW9uLCBhbmQgbW9kZXJuIEROQSByZXNlYXJjaC4gV2hlbiBhIHVzZXIgbWVudGlvbnMgYSBuYW1lIGNvbm5lY3QgaXQgdG8gdGhlIG1vc3QgbGlrZWx5IGZhbWlseSBsaW5lLg==');
-const FAMILY_CONTEXT = _fc;
+// Research context is built LIVE from the user's ACTIVE tree — never hardcoded to any
+// specific family. treeContext() is appended to every AI system prompt at call time, so
+// the assistant adapts to whatever tree is open (including new or shared trees).
+function treeContext(){
+  try {
+    const t = (typeof activeTree==='function') ? activeTree() : null;
+    const treeName = (t && t.name) || 'the active tree';
+    const lines = (typeof getLines==='function')
+      ? getLines().filter(l=>l!=='Unknown' && l!=='Composite') : [];
+    let ctx = '\n\n--- CURRENT RESEARCH CONTEXT (from the user\'s active tree only; do not assume any family, name, or place beyond what appears here) ---\n';
+    ctx += 'Active tree: ' + treeName + '.\n';
+    ctx += lines.length
+      ? ('Family lines in this tree: ' + lines.join(', ') + '.\n')
+      : 'No family lines have been defined in this tree yet.\n';
+    if(typeof people!=='undefined' && people && people.length){
+      ctx += 'People in this tree (' + people.length + '): '
+           + people.slice(0,40).map(p=>p.name + (p.line ? ' ['+p.line+']' : '')).join('; ')
+           + (people.length>40 ? ' …and ' + (people.length-40) + ' more' : '') + '.\n';
+    } else {
+      ctx += 'No people have been added to this tree yet.\n';
+    }
+    ctx += 'Tailor all help to the data above. Never invent specific ancestors, names, dates, or records; when you suggest a possibility, clearly label it a hypothesis to verify.';
+    return ctx;
+  } catch(e){ return ''; }
+}
 
 const AI_SYSTEM={
-  'ai-research': `You are an expert African American genealogy research assistant specializing in the Foreman / Drewitt (Lawson), Smith (Elsie), Reid (Charlie), and Smith (Erma) family lines.
+  'ai-research': `You are an expert African American genealogy research assistant. You work with whatever family the researcher is tracing in their active tree (provided as context with each request) — never assume a specific family.
 
 Your expertise covers:
 - Freedmen's Bureau records (labor contracts, marriage registers, hospital records, ration rolls)
@@ -5139,10 +5227,9 @@ Your expertise covers:
 - HBCU records, historically Black newspapers (Chicago Defender, Pittsburgh Courier)
 - Specific databases: FamilySearch, Ancestry AA Collections, SlaveVoyages, Freedmen's Bureau on FamilySearch, NARA, BlackPast, AAHGS, Chronicling America
 
-Always give specific, actionable next steps. Reference exact record collections and database URLs when possible. Be warm, encouraging, and culturally grounded.
-${FAMILY_CONTEXT}`,
+Always give specific, actionable next steps. Reference exact record collections and database URLs when possible. Be warm, encouraging, and culturally grounded.`,
 
-  'ai-dna': `You are an expert genetic genealogy specialist for African American DNA research, supporting the Foreman / Drewitt (Lawson), Reid (Charlie), and Smith (Erma) family lines.
+  'ai-dna': `You are an expert genetic genealogy specialist for African American DNA research. You work with whatever family the researcher is tracing in their active tree (provided as context) — never assume a specific family.
 
 Your expertise covers:
 - Interpreting cM values and relationship predictions for African American families
@@ -5156,10 +5243,9 @@ Your expertise covers:
 - How to identify enslaver surname patterns in DNA matches
 - Using DNA to break brick walls at 1870
 
-Always explain results in plain language. Give specific next steps for each match range (close family, 1st-3rd cousins, distant matches).
-${FAMILY_CONTEXT}`,
+Always explain results in plain language. Give specific next steps for each match range (close family, 1st-3rd cousins, distant matches).`,
 
-  'ai-brick': `You are a genealogical brick wall specialist for African American ancestry, focused on the Foreman / Drewitt (Lawson), Smith (Elsie), Reid (Charlie), and Smith (Erma) family lines.
+  'ai-brick': `You are a genealogical brick wall specialist for African American ancestry. You work with whatever family the researcher is tracing in their active tree (provided as context) — never assume a specific family.
 
 When given a research problem, always provide:
 1. IMMEDIATE actions — what to search today, specific databases and URLs
@@ -5177,10 +5263,9 @@ Common brick walls you specialize in:
 - Record destruction — courthouse fires, deliberate destruction of Black records
 - The "Unknown" parent problem in DNA matches
 
-Always be specific. Never say "check Ancestry" — say "search Ancestry's 'Freedmen's Bureau Records' collection at ancestry.com/search/collections/freedmensbureau."
-${FAMILY_CONTEXT}`,
+Always be specific. Never say "check Ancestry" — say "search Ancestry's 'Freedmen's Bureau Records' collection at ancestry.com/search/collections/freedmensbureau."`,
 
-  'ai-interview': `You are a compassionate, skilled family history interviewer helping document memories about the Foreman / Drewitt (Lawson), Smith (Elsie), Reid (Charlie), and Smith (Erma) family lines.
+  'ai-interview': `You are a compassionate, skilled family history interviewer helping document family memories for whatever family the researcher is tracing in their active tree (provided as context) — never assume a specific family.
 
 Your interview style:
 - Ask ONE focused question at a time — never overwhelm
@@ -5190,10 +5275,9 @@ Your interview style:
 - Listen for: name variants, maiden names, nicknames, "old country" or "back home" references, mentions of slavery or the Civil War era
 - After 6-8 exchanges, summarize what you've learned and create a specific research action plan with records to search
 
-You are warm, unhurried, and deeply respectful of family memory. You understand that for African American families, oral history is often the primary record — especially before 1870.
-${FAMILY_CONTEXT}`,
+You are warm, unhurried, and deeply respectful of family memory. You understand that for African American families, oral history is often the primary record — especially before 1870.`,
 
-  'ai-story': `You are a master storyteller specializing in African American genealogy-based fiction for the Foreman / Drewitt (Lawson), Smith, and Reid family lines.
+  'ai-story': `You are a master storyteller specializing in African American genealogy-based fiction, drawing on whatever family the researcher is tracing in their active tree (provided as context) — never assume a specific family.
 
 You write in multiple genres — Mystery/Detective, Horror, Afrofuturism, Romance, Supernatural/Paranormal, Thriller, Historical Fiction, Literary/Memoir, Comedy, YA — always grounded in authentic African American history.
 
@@ -5204,8 +5288,7 @@ Your stories:
 - Honor oral tradition and the weight of ancestral memory
 - Are emotionally resonant, sometimes supernatural, always human
 
-When writing, establish: the time period, the specific character inspired by the ancestor, the genealogical mystery or discovery driving the plot, and the historical forces shaping their world.
-${FAMILY_CONTEXT}`,
+When writing, establish: the time period, the specific character inspired by the ancestor, the genealogical mystery or discovery driving the plot, and the historical forces shaping their world.`,
 };
 const AI_HISTORY={'ai-research':[],'ai-dna':[],'ai-brick':[],'ai-interview':[],'ai-story':[]};
 
@@ -5291,7 +5374,8 @@ function updateGeminiStatus(){
 
 // ── Unified chat: tries Gemini first, falls back to Groq. Returns reply text. ──
 // messages = OpenAI-style [{role:'system'|'user'|'assistant', content}]. Throws on total failure.
-async function callGemini(messages, maxTok){
+async function callGemini(messages, maxTok, opts){
+  opts = opts||{};
   const key = getGeminiKey();
   if(!key){ const e=new Error('No Gemini key'); e.code='NOKEY'; throw e; }
   const sys = messages.filter(m=>m.role==='system').map(m=>m.content).join('\n\n');
@@ -5301,16 +5385,26 @@ async function callGemini(messages, maxTok){
   }));
   const body = { contents, generationConfig:{ maxOutputTokens: maxTok||GROQ_MAX_TOK } };
   if(sys) body.systemInstruction = { parts:[{text: sys}] };
+  // Gemini Google-Search grounding (no backend) — only the Gemini leg supports this.
+  if(opts.grounded) body.tools = [{ google_search: {} }];
   const res = await fetch(GEMINI_BASE+'/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
   });
   if(!res.ok){ const e=new Error('Gemini '+res.status); e.status=res.status; throw e; }
   const data = await res.json();
-  const reply = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+  const cand = data.candidates?.[0];
+  const reply = (cand?.content?.parts||[]).map(p=>p.text||'').join('').trim();
   if(!reply){ const e=new Error('Gemini returned no text'); e.status=204; throw e; }
+  if(opts.returnMeta){
+    const chunks = cand?.groundingMetadata?.groundingChunks || [];
+    const sources = chunks.map(c=>({ title:(c.web&&(c.web.title||c.web.uri))||'', url:(c.web&&c.web.uri)||'' }))
+                          .filter(s=>s.url);
+    return { text: reply, sources, grounded: !!opts.grounded, provider:'gemini' };
+  }
   return reply;
 }
-async function callGroq(messages, maxTok){
+async function callGroq(messages, maxTok, opts){
+  opts = opts||{};
   const key = getGroqKey();
   if(!key){ const e=new Error('No Groq key'); e.code='NOKEY'; throw e; }
   const res = await fetch(GROQ_BASE+'/chat/completions',{
@@ -5320,7 +5414,10 @@ async function callGroq(messages, maxTok){
   });
   if(!res.ok){ const e=new Error('Groq '+res.status); e.status=res.status; throw e; }
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  const reply = data.choices?.[0]?.message?.content || '';
+  // Groq has no web-search grounding → always ungrounded, no sources.
+  if(opts.returnMeta) return { text: reply, sources:[], grounded:false, provider:'groq' };
+  return reply;
 }
 // Gemini → Groq. Throws Error with .code==='NOKEY' if neither key is set.
 async function callAI(messages, opts){
@@ -5329,11 +5426,11 @@ async function callAI(messages, opts){
   if(!hasAnyAIKey()){ const e=new Error('No API key'); e.code='NOKEY'; throw e; }
   let firstErr=null;
   if(getGeminiKey()){
-    try { const r = await callGemini(messages, maxTok); if(r) return r; }
+    try { const r = await callGemini(messages, maxTok, opts); if(r) return r; }
     catch(e){ firstErr=e; if(!getGroqKey()) throw e; /* else fall back to Groq */ }
   }
   if(getGroqKey()){
-    return await callGroq(messages, maxTok);
+    return await callGroq(messages, maxTok, opts);
   }
   throw firstErr || new Error('All AI providers failed');
 }
@@ -5358,7 +5455,7 @@ async function sendAI(section){
 
   try{
     const reply = await callAI([
-      {role:'system', content: AI_SYSTEM[section]||AI_SYSTEM['ai-research']},
+      {role:'system', content: (AI_SYSTEM[section]||AI_SYSTEM['ai-research']) + treeContext()},
       ...AI_HISTORY[section]
     ], {max_tokens: GROQ_MAX_TOK});
     thinking.innerHTML = '<div class="ai-label">'+getAILabel(section)+'</div>'+
@@ -5401,6 +5498,296 @@ function addAIMsg(container,role,html){
 }
 
 
+
+// ═══════════════════════════════════════════════
+//  AI TREE LAB — review active tree → propose alternate trees → save
+// ═══════════════════════════════════════════════
+const RR_TREE_LAB_PERSONA = `You are an expert African American genealogy research specialist who helps researchers organize family trees and plan record searches. Your expertise includes the pre-1870 "brick wall", Freedmen's Bureau & Freedman's Bank records, slave schedules, 1870/1880 census strategy, USCT pension files, church/AME records, Great Migration patterns, post-Emancipation surname adoption, and the FAN/cluster (reasonably-exhaustive-search) method. You give specific, actionable next steps and name exact record collections and repositories. You NEVER fabricate names, dates, places, or records; when something is a hypothesis you label it clearly. Work ONLY from the family data the user provides — never assume any specific family.`;
+
+const TL_MODE_HELP = {
+  split: 'Separates your tree into one proposed tree per family line, each with who to start with and what to research. Reorganizes existing people only — invents no one.',
+  hypothesis: 'Proposes SPECULATIVE ancestors to break a brick wall. Every AI-added person is flagged "unverified" and is kept out of server sync so it never pollutes your real data.',
+  cleanup: 'Reviews the tree for duplicates, conflicting dates, and missing links, and proposes a corrected copy. Invents no one.',
+  competing: 'Generates 2–3 alternate versions, each a different theory of an uncertain lineage, so you can weigh them.'
+};
+let TL_LAST = { mode:'split', candidates:[], summary:'', sources:[] };
+
+function tlModeHelp(){
+  const m = document.getElementById('tl-mode'); const h = document.getElementById('tl-mode-help');
+  if(m && h) h.textContent = TL_MODE_HELP[m.value] || '';
+}
+function tlStatus(msg){
+  const el = document.getElementById('tl-status'); if(!el) return;
+  if(msg===false){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='block'; el.innerHTML = '<span class="spin"></span> ' + msg;
+}
+
+// Compact snapshot of the active tree's people (cap 200).
+function buildTreeSnapshot(){
+  const t = activeTree();
+  const cap = 200;
+  const list = (typeof people!=='undefined' ? people : []).slice(0, cap).map(p=>({
+    name:p.name, sex:p.sex||'', birth:p.birth||'', death:p.death||'', place:p.place||'',
+    father:p.father||'', mother:p.mother||'', spouse:p.spouse||'', line:p.line||'', occ:p.occ||'',
+    hasRecords: !!(p.records||p.source), noteCount: 0
+  }));
+  return {
+    treeName: (t&&t.name)||'My Family',
+    lines: getLines().filter(l=>l!=='Unknown'&&l!=='Composite'),
+    peopleCount: (typeof people!=='undefined'?people.length:0),
+    truncated: (typeof people!=='undefined' && people.length>cap),
+    people: list
+  };
+}
+
+// Robust JSON extraction from an LLM reply (handles ```json fences + surrounding prose).
+function extractJSON(text){
+  if(!text) return null;
+  let s = String(text).trim();
+  s = s.replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  const start = s.indexOf('{');
+  if(start<0) return null;
+  // find matching closing brace
+  let depth=0, end=-1;
+  for(let i=start;i<s.length;i++){
+    if(s[i]==='{') depth++;
+    else if(s[i]==='}'){ depth--; if(depth===0){ end=i; break; } }
+  }
+  if(end<0) return null;
+  try { return JSON.parse(s.slice(start, end+1)); } catch(e){ return null; }
+}
+
+function tlModeInstruction(mode, snap){
+  const common = `The researcher's active tree "${snap.treeName}" has ${snap.peopleCount} people. Family lines present: ${snap.lines.join(', ')||'(none defined)'}.`;
+  const noInvent = `Do NOT invent any person who is not in the provided people list. Use only the supplied people.`;
+  const map = {
+    split: `${common} Split this tree into one candidate per family line. ${noInvent} For each line, list the people that belong to it, name who to start with and why, and give 3-6 specific record-research tasks.`,
+    cleanup: `${common} Produce ONE corrected candidate. ${noInvent} Identify likely duplicate people, conflicting dates, and missing parent/spouse links, and reflect fixes in the people list. List the issues you found as research tasks.`,
+    hypothesis: `${common} Propose 1-2 candidates that extend a brick-wall line with LIKELY ancestors. Any person you ADD that is not in the input MUST have "speculative": true and a "reason". Keep existing people as-is. Give record tasks to confirm each hypothesis.`,
+    competing: `${common} Propose 2-3 competing candidates, each a DIFFERENT plausible theory of an uncertain lineage. Mark any added person "speculative": true with a "reason". Give record tasks that would distinguish the theories.`
+  };
+  return map[mode] || map.split;
+}
+
+const TL_SCHEMA_NOTE = `Return ONLY valid JSON, no prose, in exactly this shape:
+{"mode":"<mode>","summary":"...","candidates":[{"name":"...","line":"...","people":[{"name":"","birth":"","death":"","place":"","father":"","mother":"","spouse":"","line":"","occ":"","notes":"","speculative":false,"reason":""}],"startWith":{"person":"","why":""},"research":[{"task":"","repository":"","why":""}],"summary":""}]}`;
+
+// Multi-step loop: (1) plan/analyze with grounding, (2) synthesize strict JSON.
+async function runResearchLoop(mode, snap){
+  const snapStr = JSON.stringify(snap.people);
+  // Step 1 — Plan & analyze (grounded on Gemini leg for real sources)
+  tlStatus('Planning &amp; analyzing your tree…');
+  let analysis = '', sources = [];
+  try {
+    const meta = await callAI([
+      {role:'system', content: RR_TREE_LAB_PERSONA},
+      {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}\n\nFirst, think step by step: what does this tree show, what's missing, and which specific record collections/repositories would help? Name real, current sources where possible.`}
+    ], {grounded:true, returnMeta:true, max_tokens: 2048});
+    if(meta && typeof meta==='object'){ analysis = meta.text||''; sources = meta.sources||[]; }
+    else analysis = meta||'';
+  } catch(e){ analysis=''; }
+  // Step 2 — Synthesize strict JSON
+  tlStatus('Proposing &amp; reflecting on candidates…');
+  let parsed = null, lastErr = null, rawReply = '';
+  for(let attempt=0; attempt<2 && !parsed; attempt++){
+    const nudge = attempt===0 ? '' : '\n\nYour previous reply was not valid JSON. Return ONLY the JSON object, nothing else.';
+    let reply;
+    try {
+      reply = await callAI([
+        {role:'system', content: RR_TREE_LAB_PERSONA},
+        {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}\n\nAnalysis so far:\n${analysis||'(none)'}\n\n${TL_SCHEMA_NOTE.replace('<mode>',mode)}${nudge}`}
+      ], {max_tokens: 4096});
+      rawReply = reply || '';
+    } catch(e){ lastErr = e; reply=''; }
+    parsed = extractJSON(reply);
+  }
+  if(parsed) parsed._sources = sources;
+  return { parsed, lastErr, rawReply };
+}
+
+async function treeLabAnalyze(){
+  if(!hasAnyAIKey()){ showToast('⚠️ Add a Gemini or Groq key in ⚙️ Settings first.'); nav('settings'); return; }
+  if(typeof people==='undefined' || !people.length){ showToast('Add people to your tree first — there is nothing to analyze yet.'); return; }
+  const mode = document.getElementById('tl-mode').value;
+  const btn = document.getElementById('tl-run-btn'); if(btn) btn.disabled=true;
+  document.getElementById('tl-results').innerHTML='';
+  document.getElementById('tl-save-row').style.display='none';
+  const snap = buildTreeSnapshot();
+  try{
+    const out = await runResearchLoop(mode, snap);
+    const result = out && out.parsed;
+    tlStatus(false);
+    if(!result || !Array.isArray(result.candidates) || !result.candidates.length){
+      let why;
+      if(out && out.lastErr){
+        const s = out.lastErr.status;
+        if(out.lastErr.code==='NOKEY') why='No AI key is saved in THIS copy of the app. Open ⚙️ Settings and paste your Gemini key. (Keys are stored per-site, so a local copy won\'t have the key you saved on the live site.)';
+        else if(s===401||s===403) why='Your API key was rejected (HTTP '+s+'). Re-check the Gemini/Groq key in ⚙️ Settings.';
+        else if(s===429) why='Rate limited (HTTP 429) — wait a minute and try again.';
+        else why='AI call failed: '+(out.lastErr.message||out.lastErr);
+      } else if(out && out.rawReply){
+        why='The AI replied but not in the expected format. First 200 chars: '+tlEsc(out.rawReply.slice(0,200));
+      } else {
+        why='The AI returned an empty response. Try again, or use a Gemini key for best results.';
+      }
+      document.getElementById('tl-results').innerHTML='<div class="card" style="color:var(--red);">'+why+'</div>';
+      return;
+    }
+    // Guardrail: split/cleanup must not introduce people who aren't in the source tree.
+    if(mode==='split' || mode==='cleanup'){
+      const known = new Set(snap.people.map(p=>(p.name||'').toLowerCase().trim()));
+      result.candidates.forEach(c=>{
+        if(Array.isArray(c.people)) c.people = c.people.filter(p=>known.has((p.name||'').toLowerCase().trim()));
+      });
+    }
+    TL_LAST = { mode, candidates: result.candidates, summary: result.summary||'', sources: result._sources||[] };
+    renderCandidates();
+  }catch(e){
+    tlStatus(false);
+    document.getElementById('tl-results').innerHTML='<div class="card" style="color:var(--red);">Analysis failed: '+(e.message||e)+'</div>';
+  }finally{ if(btn) btn.disabled=false; }
+}
+
+function tlEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tlResearchLine(r){
+  if(typeof r==='string') return tlEsc(r);
+  const parts=[tlEsc(r.task||'')];
+  if(r.repository) parts.push('<span style="color:var(--text3);">— '+tlEsc(r.repository)+'</span>');
+  if(r.why) parts.push('<span style="color:var(--text3);font-style:italic;"> ('+tlEsc(r.why)+')</span>');
+  return parts.join(' ');
+}
+
+function renderCandidates(){
+  const wrap = document.getElementById('tl-results');
+  const grounded = TL_LAST.sources && TL_LAST.sources.length;
+  let html = '';
+  if(TL_LAST.summary) html += '<div class="card" style="margin-bottom:12px;"><div style="font-size:13px;color:var(--text2);line-height:1.6;">'+tlEsc(TL_LAST.summary)+'</div>'+
+    (grounded ? '<div style="font-size:11px;color:var(--grn);margin-top:8px;">🔗 Grounded with web sources ('+TL_LAST.sources.length+')</div>'
+              : '<div style="font-size:11px;color:var(--gold);margin-top:8px;">⚠️ Ungrounded — verify suggestions independently</div>')+'</div>';
+  TL_LAST.candidates.forEach((c,i)=>{
+    const spec = (c.people||[]).filter(p=>p.speculative);
+    html += '<div class="card" style="margin-bottom:12px;border-left:4px solid var(--gold);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">'+
+        '<div><div style="font-weight:700;color:var(--burg2);font-size:15px;">'+tlEsc(c.name||('Candidate '+(i+1)))+'</div>'+
+        '<div style="font-size:11px;color:var(--text3);">'+(c.line?tlEsc(c.line)+' · ':'')+((c.people||[]).length)+' people'+(spec.length?' · '+spec.length+' ⚠ speculative':'')+'</div></div>'+
+        '<label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="tl-pick" data-idx="'+i+'" onchange="tlUpdateSaveCount()"> Save</label>'+
+      '</div>';
+    if(c.summary) html += '<div style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5;">'+tlEsc(c.summary)+'</div>';
+    if(c.startWith && (c.startWith.person||c.startWith.why)) html += '<div style="font-size:12px;margin-top:8px;"><strong>Start with:</strong> '+tlEsc(c.startWith.person)+(c.startWith.why?' — '+tlEsc(c.startWith.why):'')+'</div>';
+    if(Array.isArray(c.research) && c.research.length){
+      html += '<div style="font-size:12px;margin-top:8px;"><strong>Research plan:</strong><ul style="margin:5px 0 0 18px;padding:0;">'+
+        c.research.map(r=>'<li style="margin-bottom:3px;">'+tlResearchLine(r)+'</li>').join('')+'</ul></div>';
+    }
+    if(spec.length) html += '<div style="font-size:11px;margin-top:8px;color:var(--gold);">⚠ Speculative (unverified): '+spec.map(p=>tlEsc(p.name)).join(', ')+'</div>';
+    html += '<div style="margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="generateCandidateReport('+i+')">📄 Generate Report</button></div>';
+    html += '</div>';
+  });
+  wrap.innerHTML = html;
+  document.getElementById('tl-save-row').style.display='block';
+  tlUpdateSaveCount();
+}
+
+function tlUpdateSaveCount(){
+  const n = document.querySelectorAll('.tl-pick:checked').length;
+  const el = document.getElementById('tl-save-count'); if(el) el.textContent=n;
+}
+
+function saveSelectedCandidates(){
+  const picks = Array.prototype.map.call(document.querySelectorAll('.tl-pick:checked'), cb=>parseInt(cb.dataset.idx,10));
+  if(!picks.length){ showToast('Check at least one candidate to save.'); return; }
+  const trees = getTrees();
+  const srcId = getActiveTreeId();
+  let saved=0;
+  picks.forEach(idx=>{
+    const c = TL_LAST.candidates[idx]; if(!c) return;
+    let id = slugifyTreeName(c.name||('alt-tree-'+(idx+1)));
+    while(trees.some(t=>t.id===id)) id += '-'+(trees.length+1);
+    const ppl = (c.people||[]).map(p=>{
+      const o = { name:p.name||'', sex:p.sex||'', birth:p.birth||'', death:p.death||'', place:p.place||'',
+        father:p.father||'', mother:p.mother||'', spouse:p.spouse||'', occ:p.occ||'', notes:p.notes||'', line:p.line||c.line||'Composite' };
+      if(p.speculative){ o.speculative=true; o.source='AI hypothesis — unverified'; }
+      return o;
+    });
+    const treeLines = Array.from(new Set(ppl.map(p=>p.line).filter(l=>l&&l!=='Composite'&&l!=='Unknown')));
+    const today = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const noteItems = (c.research||[]).map(r=>({
+      text: '🔬 ' + (typeof r==='string' ? r : ([r.task, r.repository?('('+r.repository+')'):'', r.why?('— '+r.why):''].filter(Boolean).join(' '))),
+      line: c.line||'Composite', person:'', date: today
+    }));
+    if(c.startWith && c.startWith.person) noteItems.unshift({ text:'▶ Start with '+c.startWith.person+(c.startWith.why?' — '+c.startWith.why:''), line:c.line||'Composite', person:'', date:today });
+    const blob = {
+      people: ppl, notes: noteItems, hypos: [], legacyNotes: [], records: [], timelineEvents: [],
+      lines: treeLines,
+      aiPlan: { mode: TL_LAST.mode, sourceTree: srcId, createdAt: new Date().toISOString(),
+                startWith: c.startWith||null, research: c.research||[], summary: c.summary||'', sources: TL_LAST.sources||[] }
+    };
+    localStorage.setItem('rr_data_v1::'+id, JSON.stringify(blob));
+    trees.push({ id, name: c.name||('Alternate Tree '+(idx+1)), createdAt:new Date().toISOString(),
+                 aiGenerated:true, mode:TL_LAST.mode, sourceTree:srcId });
+    saved++;
+  });
+  setTrees(trees);
+  if(typeof renderTreeSwitcher==='function') renderTreeSwitcher();
+  showToast('✅ Saved '+saved+' alternate tree'+(saved===1?'':'s')+' — switch from the tree menu to open.');
+  document.querySelectorAll('.tl-pick:checked').forEach(cb=>cb.checked=false);
+  tlUpdateSaveCount();
+}
+
+// ── Shared research-report builder (used by Tree Lab candidates + Reports section) ──
+function buildResearchReport(src){
+  // src: {name, line, summary, people[], startWith, research[], mode, sources[]}
+  const date = new Date().toLocaleDateString();
+  let h = '<div style="font-family:Georgia,serif;color:#222;">';
+  h += '<h2 style="color:#7a1a2e;border-bottom:2px solid #c4a400;padding-bottom:6px;">'+tlEsc(src.name||'Research Report')+'</h2>';
+  h += '<p style="font-size:11px;color:#888;">Roots &amp; Records · '+date+(src.mode?' · '+tlEsc(src.mode)+' analysis':'')+(src.line?' · '+tlEsc(src.line)+' line':'')+'</p>';
+  if(src.summary) h += '<p>'+tlEsc(src.summary)+'</p>';
+  if(src.startWith && src.startWith.person) h += '<p><strong>Start with:</strong> '+tlEsc(src.startWith.person)+(src.startWith.why?' — '+tlEsc(src.startWith.why):'')+'</p>';
+  if(Array.isArray(src.research) && src.research.length){
+    h += '<h3 style="color:#7a1a2e;">Research Plan</h3><ol>'+src.research.map(r=>'<li>'+tlResearchLine(r)+'</li>').join('')+'</ol>';
+  }
+  if(Array.isArray(src.people) && src.people.length){
+    h += '<h3 style="color:#7a1a2e;">People ('+src.people.length+')</h3><table style="border-collapse:collapse;width:100%;font-size:12px;"><tr style="background:#7a1a2e;color:#fff;"><th style="padding:6px;text-align:left;">Name</th><th style="padding:6px;">Birth</th><th style="padding:6px;">Death</th><th style="padding:6px;text-align:left;">Place</th><th style="padding:6px;text-align:left;">Parents</th></tr>';
+    h += src.people.map(p=>'<tr><td style="padding:6px;border-bottom:1px solid #ddd;">'+tlEsc(p.name)+(p.speculative?' <span style="color:#b8860b;">⚠ unverified</span>':'')+'</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:center;">'+tlEsc(p.birth||'—')+'</td><td style="padding:6px;border-bottom:1px solid #ddd;text-align:center;">'+tlEsc(p.death||'—')+'</td><td style="padding:6px;border-bottom:1px solid #ddd;">'+tlEsc(p.place||'—')+'</td><td style="padding:6px;border-bottom:1px solid #ddd;">'+tlEsc([p.father,p.mother].filter(Boolean).join(' & ')||'—')+'</td></tr>').join('');
+    h += '</table>';
+  }
+  if(Array.isArray(src.sources) && src.sources.length){
+    h += '<h3 style="color:#7a1a2e;">Sources</h3><ul>'+src.sources.map(s=>'<li><a href="'+tlEsc(s.url)+'">'+tlEsc(s.title||s.url)+'</a></li>').join('')+'</ul>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function openReportWindow(title, innerHtml){
+  const blob = new Blob(['<!doctype html><html><head><meta charset="utf-8"><title>'+tlEsc(title)+'</title></head><body style="margin:24px;">'+innerHtml+'</body></html>'],{type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url,'_blank');
+  if(win){ setTimeout(()=>{ try{win.print();}catch(e){} URL.revokeObjectURL(url); }, 700); }
+  else showToast('Allow popups to view/print the report.');
+}
+
+function generateCandidateReport(idx){
+  const c = TL_LAST.candidates[idx]; if(!c) return;
+  const src = { name:c.name, line:c.line, summary:c.summary, people:c.people, startWith:c.startWith, research:c.research, mode:TL_LAST.mode, sources:TL_LAST.sources };
+  openReportWindow(c.name||'Research Report', buildResearchReport(src));
+}
+
+// Reports-section entry: research report for the ACTIVE tree (uses its saved aiPlan when present).
+function alternateTreeReport(){
+  const t = (typeof activeTree==='function')?activeTree():null;
+  let data={}; try{ data=JSON.parse(localStorage.getItem(treeKey('rr_data_v1')))||{}; }catch(e){}
+  const plan = data.aiPlan||null;
+  const src = {
+    name: ((t&&t.name)||'This Tree')+' — Research Report',
+    line: '', summary: plan?plan.summary:'',
+    people: (typeof people!=='undefined'?people:[]).map(p=>({name:p.name,birth:p.birth,death:p.death,place:p.place,father:p.father,mother:p.mother,speculative:p.speculative})),
+    startWith: plan?plan.startWith:null,
+    research: plan?plan.research:[],
+    mode: plan?plan.mode:'',
+    sources: plan?plan.sources:[]
+  };
+  if(!src.people.length && !plan){ showToast('This tree has no people or AI research plan to report yet.'); return; }
+  openReportWindow(src.name, buildResearchReport(src));
+}
 
 // ═══════════════════════════════════════════════
 //  STORY
@@ -8725,7 +9112,7 @@ async function pbAuth(){
     const res = await fetch(PB_URL+'/api/admins/auth-with-password',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({identity:'j.l.watford15@gmail.com', password:'roots2025!'})
+      body:JSON.stringify({identity:'needhelpctr@gmail.com', password:'Pocketb@s3'})
     });
     if(!res.ok) return false;
     const data = await res.json();
@@ -8786,8 +9173,9 @@ async function syncToPocketBase(){
 
   showToast('☁️ Syncing to server…');
 
-  // Sync people
+  // Sync people — quarantine AI-speculative people (never push unverified hypotheses to server)
   for(const p of people){
+    if(p.speculative) continue;
     const rec = await pbSave('people', {...p});
     if(rec&&rec.id) p._pbId=rec.id;
   }
@@ -9404,6 +9792,8 @@ function buildCompositeTree(){
 
   if(viewMode==='chart'){
     buildAncestryStyleTree(filtered, lineColors, treeEl);
+  } else if(viewMode==='full'){
+    buildFullTreeView(filtered, lineColors, treeEl);
   } else if(viewMode==='birth'){
     const sorted=[...filtered].sort((a,b)=>(parseInt(a.birth)||9999)-(parseInt(b.birth)||9999));
     buildCompositeListSVG(sorted, lineColors, treeEl, 'birth');
@@ -9411,6 +9801,39 @@ function buildCompositeTree(){
     const sorted=[...filtered].sort((a,b)=>a.name.localeCompare(b.name));
     buildCompositeListSVG(sorted, lineColors, treeEl, 'alpha');
   }
+}
+
+// Full Tree view: lays out the WHOLE connected tree as a nested descendant outline,
+// so every linked person shows (not just one person's ancestry). Unconnected people listed at the end.
+function buildFullTreeView(filtered, lineColors, treeEl){
+  const byName={}; people.forEach(p=>{ byName[p.name]=p; });
+  const inView=new Set(filtered.map(p=>p.name));
+  const childrenOf={};
+  people.forEach(p=>{ [p.father,p.mother].forEach(par=>{ if(par){ (childrenOf[par]=childrenOf[par]||[]).push(p); } }); });
+  function colOf(p){ const l=p.line||'Composite'; return lineColors[l]||(typeof lineColor==='function'?lineColor(l):'')||'#c4a400'; }
+  // Roots = in-view people whose parents are not present in the data set.
+  const roots=filtered.filter(p=>{ const f=p.father&&byName[p.father]; const m=p.mother&&byName[p.mother]; return !f && !m; });
+  const rendered=new Set();
+  function nodeHtml(p, depth){
+    if(rendered.has(p.name) || depth>30) return '';
+    rendered.add(p.name);
+    const c=colOf(p); const idx=people.indexOf(p);
+    const kids=(childrenOf[p.name]||[]).filter(k=>inView.has(k.name) && !rendered.has(k.name));
+    let h='<div style="margin-left:'+(depth*16)+'px;border-left:2px solid '+c+'44;padding:3px 0 3px 8px;">'
+      +'<span onclick="openPersonFromTree('+idx+')" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text);">'+tlEsc(p.name)+'</span>'
+      +' <span style="font-size:10px;color:var(--text3);">'+(p.birth?'b.'+tlEsc(String(p.birth)):'')+(p.death?' d.'+tlEsc(String(p.death)):'')+(p.line?' · '+tlEsc(p.line):'')+'</span></div>';
+    h+=kids.map(k=>nodeHtml(k,depth+1)).join('');
+    return h;
+  }
+  let html=roots.map(r=>nodeHtml(r,0)).join('');
+  const orphans=filtered.filter(p=>!rendered.has(p.name));
+  if(orphans.length){
+    html+='<div style="margin-top:14px;border-top:1px solid var(--div);padding-top:8px;font-size:11px;font-weight:700;color:var(--text3);">Unconnected — no linked parent/child ('+orphans.length+')</div>';
+    html+=orphans.map(p=>nodeHtml(p,0)).join('');
+  }
+  treeEl.innerHTML='<div style="padding:10px;">'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Showing all '+filtered.length+' people in view. Click any name to open.</div>'
+    +(html||'<div style="color:var(--text3);">No people to show.</div>')+'</div>';
 }
 
 function buildAncestryStyleTree(filtered, lineColors, treeEl){
@@ -9427,8 +9850,22 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
   const BOX_W=160, BOX_H=52, H_GAP=60, COUPLE_GAP=8, V_GAP=16;
   const GEN_STEP=BOX_W+H_GAP; // horizontal step per generation
 
-  // ── Find focus person (most connected or first person) ───────────────────
-  let focus=filtered.find(p=>p.focus)||filtered[0];
+  // ── Find focus person: explicit focus, else the most-connected descendant ──
+  function countAncestry(start){
+    let count=0; const seen=new Set([start.name]); const stack=[[start.name,0]];
+    while(stack.length){
+      const fr=stack.pop(); const nm=fr[0], d=fr[1]; if(d>=10) continue;
+      const pp=byName[nm]; if(!pp) continue;
+      [pp.father,pp.mother].forEach(function(pn){ if(pn&&!seen.has(pn)){ seen.add(pn); count++; stack.push([pn,d+1]); } });
+    }
+    return count;
+  }
+  let focus=filtered.find(p=>p.focus);
+  if(!focus){
+    let best=filtered[0], bestC=-1;
+    for(const p of filtered){ const c=countAncestry(p); if(c>bestC){ bestC=c; best=p; } }
+    focus=best;
+  }
   if(!focus) { treeEl.innerHTML='<div style="padding:20px;color:var(--text3);">No people in this view.</div>'; return; }
 
   // ── Build Ahnentafel map up to 5 generations ─────────────────────────────
@@ -9438,7 +9875,7 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
   ahnMap[1]=focus;
 
   function fillAhn(n, depth){
-    if(depth>4) return;
+    if(depth>9) return;
     const p=ahnMap[n]; if(!p) return;
     if(p.father){
       const f=byName[p.father]||{name:p.father,line:p.line,_ghost:true};
@@ -9462,8 +9899,11 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
   // Gen 1 (focus) is at x=0, Gen 2 at x=GEN_STEP, etc.
   // Vertical positions: evenly spaced within total height
 
-  const MAX_GEN=5;
-  const totalSlots=Math.pow(2,MAX_GEN-1); // 16 at gen 5
+  // Dynamic depth: show as many generations as the data actually has (5–10).
+  let deepestGen=1;
+  Object.keys(ahnMap).forEach(function(k){ const g=Math.floor(Math.log2(parseInt(k)))+1; if(g>deepestGen) deepestGen=g; });
+  const MAX_GEN=Math.min(10, Math.max(5, deepestGen));
+  const totalSlots=Math.pow(2,MAX_GEN-1);
   const totalH=totalSlots*(BOX_H+V_GAP);
   const svgW=MAX_GEN*GEN_STEP+BOX_W+40;
   const svgH=Math.max(totalH+40, 600);
@@ -9668,8 +10108,9 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
       const idx=people.indexOf(p);
       drawPersonBox(svg, ns, p, pos.x, pos.y, col(p), idx);
     } else {
-      // Empty slot — show "Unknown" placeholder for missing ancestors
-      if(n<=Math.pow(2,MAX_GEN-1)-1){ // only for gens 1-4, not the last gen
+      // Empty slot — show "Unknown" placeholder, but only for the first 4 generations
+      // (deeper generations would create hundreds of empty boxes on a large tree).
+      if(n<=15){
         const ghost={name:'Unknown',_ghost:true,line:'Composite'};
         const g=document.createElementNS(ns,'g');
         const rect=document.createElementNS(ns,'rect');
@@ -9691,7 +10132,8 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
   }
 
   // ── Generation labels ────────────────────────────────────────────────────
-  const genLabels=['','You','Parents','Grandparents','Great-Grandparents','2× Great-Grandparents'];
+  const genLabels=['','You','Parents','Grandparents','Great-Grandparents'];
+  function genLabel(g){ return genLabels[g] || ((g-2)+'× Great-Grandparents'); }
   for(let gen=1; gen<=MAX_GEN; gen++){
     const lx=(gen-1)*GEN_STEP+20+BOX_W/2;
     const lt=document.createElementNS(ns,'text');
@@ -9699,7 +10141,7 @@ function buildAncestryStyleTree(filtered, lineColors, treeEl){
     lt.setAttribute('font-size','9'); lt.setAttribute('fill','#444');
     lt.setAttribute('text-anchor','middle'); lt.setAttribute('font-family','Arial');
     lt.setAttribute('font-weight','700');
-    lt.textContent=genLabels[gen]||'';
+    lt.textContent=genLabel(gen);
     svg.appendChild(lt);
   }
 
@@ -9940,114 +10382,6 @@ function buildCompositeListSVG(sorted, lineColors, treeEl, mode){
   treeEl.insertAdjacentHTML('beforeend','<div style="font-size:11px;color:var(--text3);margin-top:6px;padding:0 4px;">Showing '+Math.min(sorted.length, Math.floor((svgH-20)/(BOX_H+GAP)))+' of '+sorted.length+' people · Click any row to view details</div>');
 }
 
-function buildPedigreeTree(){
-  populatePersonSelectors();
-  const lineFilter=(document.getElementById('composite-line-filter')||{}).value||'';
-  const viewMode=(document.getElementById('composite-view-mode')||{}).value||'lines';
-  const search=((document.getElementById('composite-search')||{}).value||'').toLowerCase();
-  const lineColors={
-    'Foreman / Drewitt (Lawson)':'var(--foreman)',
-    'Smith (Elsie)':'var(--smith1)',
-    'Reid (Charlie)':'var(--reid)',
-    'Smith (Erma)':'var(--smith2)',
-    'Composite':'var(--gold)'
-  };
-
-  // Filter people
-  let filtered=people.filter(function(p){
-    const matchLine=!lineFilter||(p.line||'Composite')===lineFilter;
-    const matchSearch=!search||p.name.toLowerCase().includes(search);
-    return matchLine&&matchSearch;
-  });
-
-  // ── Stats row ──────────────────────────────────────────────────────────
-  const statsRow=document.getElementById('composite-stats-row');
-  if(statsRow){
-    const lines=getLines().filter(l=>l!=='Unknown');
-    statsRow.innerHTML=lines.map(function(l){
-      const c=people.filter(function(p){return (p.line||'Composite')===l;}).length;
-      const col=lineColors[l]||lineColor(l);
-      return '<div class="stat-box" style="border-top:3px solid '+col+';cursor:pointer;" onclick="document.getElementById(\'composite-line-filter\').value=\''+l+'\';buildCompositeTree();">'
-        +'<div style="font-size:11px;font-weight:700;color:'+col+';margin-bottom:4px;">'+l.split(' ')[0]+'</div>'
-        +'<div class="stat-num" style="font-size:1.8rem;color:'+col+';">'+c+'</div>'
-        +'<div class="stat-label">people</div></div>';
-    }).join('')+'<div class="stat-box" style="border-top:3px solid var(--burg2);">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--burg2);margin-bottom:4px;">Total</div>'
-      +'<div class="stat-num" style="font-size:1.8rem;">'+people.length+'</div>'
-      +'<div class="stat-label">people</div></div>';
-  }
-
-  // ── Tree visual ─────────────────────────────────────────────────────────
-  const treeEl=document.getElementById('composite-tree-display');
-  if(treeEl){
-    if(!filtered.length){
-      treeEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);">No people match this filter. Upload a GEDCOM or add people manually.</div>';
-    } else if(viewMode==='lines'){
-      const byLine={};
-      filtered.forEach(function(p){ const l=p.line||'Composite'; if(!byLine[l]) byLine[l]=[]; byLine[l].push(p); });
-      treeEl.innerHTML=Object.entries(byLine).map(function(e){
-        const l=e[0], ps=e[1], col=lineColors[l]||'var(--gold)';
-        return '<div style="margin-bottom:20px;">'
-          +'<div style="font-weight:700;color:'+col+';font-size:13px;border-bottom:2px solid '+col+';padding-bottom:6px;margin-bottom:10px;">'+l+' — '+ps.length+' people</div>'
-          +'<div style="display:flex;flex-wrap:wrap;gap:8px;">'
-          +ps.map(function(p,i){
-            const idx=people.indexOf(p);
-            return '<div onclick="setFocusPerson('+idx+');nav(\'focus\');" style="background:rgba(255,255,255,0.04);border:1px solid '+col+'44;border-radius:8px;padding:8px 12px;cursor:pointer;min-width:180px;flex:1;max-width:260px;transition:all .15s;" onmouseover="this.style.borderColor=\''+col+'\'" onmouseout="this.style.borderColor=\''+col+'44\'">'
-              +'<div style="font-weight:700;font-size:12px;color:var(--text);">'+p.name+'</div>'
-              +'<div style="font-size:11px;color:var(--text3);">'+(p.birth?'b.'+p.birth:'')+(p.death?' – d.'+p.death:'')+'</div>'
-              +(p.place?'<div style="font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍'+p.place+'</div>':'')
-              +'</div>';
-          }).join('')+'</div></div>';
-      }).join('');
-    } else if(viewMode==='birth'){
-      const sorted=[...filtered].sort(function(a,b){ return (parseInt(a.birth)||9999)-(parseInt(b.birth)||9999); });
-      treeEl.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;">'
-        +sorted.map(function(p){
-          const idx=people.indexOf(p); const col=lineColors[p.line||'Composite']||'var(--gold)';
-          return '<div onclick="setFocusPerson('+idx+');nav(\'focus\');" style="background:rgba(255,255,255,0.04);border:1px solid '+col+'44;border-radius:8px;padding:8px 12px;cursor:pointer;min-width:160px;flex:1;max-width:240px;">'
-            +'<div style="font-size:10px;color:'+col+';font-weight:700;margin-bottom:3px;">'+(p.birth||'?')+'</div>'
-            +'<div style="font-weight:700;font-size:12px;color:var(--text);">'+p.name+'</div>'
-            +'<div style="font-size:10px;color:var(--text3);">'+(p.line||'Composite').split(' ')[0]+'</div>'
-            +'</div>';
-        }).join('')+'</div>';
-    } else {
-      // Alpha
-      const sorted=[...filtered].sort(function(a,b){ return a.name.localeCompare(b.name); });
-      treeEl.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;">'
-        +sorted.map(function(p){
-          const idx=people.indexOf(p); const col=lineColors[p.line||'Composite']||'var(--gold)';
-          return '<div onclick="setFocusPerson('+idx+');nav(\'focus\');" style="background:rgba(255,255,255,0.04);border:1px solid '+col+'44;border-radius:8px;padding:8px 12px;cursor:pointer;min-width:160px;flex:1;max-width:240px;">'
-            +'<div style="font-weight:700;font-size:12px;color:var(--text);">'+p.name+'</div>'
-            +'<div style="font-size:10px;color:var(--text3);">'+(p.birth?'b.'+p.birth+' ':'')+(p.line||'Composite').split(' ')[0]+'</div>'
-            +'</div>';
-        }).join('')+'</div>';
-    }
-  }
-
-  // ── Table ───────────────────────────────────────────────────────────────
-  const tbody=document.getElementById('composite-table-body');
-  if(tbody){
-    if(!filtered.length){
-      tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);">No people to display.</td></tr>';
-    } else {
-      tbody.innerHTML=filtered.map(function(p){
-        const idx=people.indexOf(p);
-        const col=lineColors[p.line||'Composite']||'var(--gold)';
-        return '<tr>'
-          +'<td style="font-weight:700;">'+p.name+'</td>'
-          +'<td>'+( p.birth||'—')+'</td>'
-          +'<td>'+( p.death||'—')+'</td>'
-          +'<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;">'+( p.place||'—')+'</td>'
-          +'<td style="font-size:11px;">'+( p.father||'—')+'</td>'
-          +'<td style="font-size:11px;">'+( p.mother||'—')+'</td>'
-          +'<td style="font-size:11px;">'+( p.spouse||'—')+'</td>'
-          +'<td><span style="font-size:10px;color:'+col+';font-weight:700;padding:2px 6px;background:'+col+'22;border-radius:6px;">'+( p.line||'Composite').split(' ')[0]+'</span></td>'
-          +'<td><button class="btn btn-gold btn-sm" style="font-size:11px;" onclick="currentPersonIdx='+idx+';openEditCurrentPerson();">✏️</button></td>'
-          +'</tr>';
-      }).join('');
-    }
-  }
-}
 
 function buildPedigreeTree(){
   const el = document.getElementById('pedigree-tree');
@@ -10812,7 +11146,7 @@ async function generateAncestorQuote(){
   const context = document.getElementById('quote-context')?.value?.trim() || '';
   const style = document.getElementById('quote-style')?.value || 'Dignified reflection';
   const era = document.getElementById('quote-era')?.value?.trim() || 'Post-Civil War South';
-  const prompt = `Write a moving one-paragraph "voice" for an African American ancestor named ${name}. Context: ${context}. Era: ${era}. Style: ${style}. Write in first person as this ancestor speaking to their descendants. Ground it in real historical African American experience. Be dignified, powerful, and emotionally resonant. Family lines: Foreman/Drewitt (Lawson), Smith (Elsie), Reid (Charlie), Smith (Erma).`;
+  const prompt = `Write a moving one-paragraph "voice" for an African American ancestor named ${name}. Context: ${context}. Era: ${era}. Style: ${style}. Write in first person as this ancestor speaking to their descendants. Ground it in real historical African American experience. Be dignified, powerful, and emotionally resonant.${treeContext()}`;
   const res = document.getElementById('quote-results');
   const txt = document.getElementById('quote-result-text');
   const lbl = document.getElementById('quote-result-name');
