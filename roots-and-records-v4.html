@@ -137,6 +137,8 @@ body.tree-focus #tree-focus-exit{display:inline-flex;}
 .fi,.fs,.fta{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(212,168,67,0.2);color:var(--text);border-radius:7px;padding:9px 12px;font-family:'Lato',sans-serif;font-size:16px;-webkit-appearance:none;appearance:none;touch-action:manipulation;}
 @media(min-width:681px){.fi,.fs,.fta{font-size:13px;}}
 .fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--gold-dim);box-shadow:0 0 0 3px rgba(212,168,67,0.15);}
+/* Native dropdown list: opaque dark bg + light text so options don't blend into the OS-white menu */
+.fs option,.fi option,select option{background:#1a0618;color:#f2e8d6;}
 .fta{resize:vertical;min-height:80px;}
 
 /* TABLE */
@@ -3392,73 +3394,6 @@ You can also paste any free-form research text and it will be imported as a Rese
 
 </div><!-- /main -->
 
-<!-- ═══ FLOATING MUSIC PLAYER ═══ -->
-<div id="music-player" style="position:fixed;bottom:20px;right:20px;z-index:9000;width:320px;background:var(--card);border:1px solid rgba(212,168,67,0.4);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);transition:box-shadow .2s;user-select:none;">
-
-  <!-- COLLAPSED BAR — drag handle + controls -->
-  <div id="music-drag-handle" style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:grab;" onclick="toggleMusicPlayer()">
-    <span style="font-size:1rem;cursor:grab;" title="Drag to move">⠿</span>
-    <span style="font-size:1rem;">🎵</span>
-    <div style="flex:1;min-width:0;">
-      <div id="yt-now-playing" style="font-size:11px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Research Music Player</div>
-    </div>
-    <div style="display:flex;gap:4px;align-items:center;">
-      <button class="btn btn-ghost btn-sm" style="padding:3px 7px;font-size:12px;" onclick="event.stopPropagation();ytPlayPause()" id="yt-playpause-btn">▶</button>
-      <button class="btn btn-ghost btn-sm" style="padding:3px 7px;font-size:12px;" onclick="event.stopPropagation();ytToggleMute()" id="yt-mute-btn">🔊</button>
-      <span id="music-toggle-icon" style="font-size:12px;color:var(--text3);margin-left:4px;">▲</span>
-    </div>
-  </div>
-
-  <!-- EXPANDED PANEL -->
-  <div id="music-panel" style="display:none;border-top:1px solid var(--div);padding:12px;">
-
-    <!-- YouTube iframe -->
-    <div style="position:relative;width:100%;padding-bottom:56%;margin-bottom:10px;border-radius:8px;overflow:hidden;background:#000;">
-      <iframe id="yt-player" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px;"
-        allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-
-    <!-- Search -->
-    <div style="display:flex;gap:5px;margin-bottom:10px;">
-      <input class="fi" id="yt-search" placeholder="Search YouTube…" style="flex:1;font-size:11px;padding:5px 8px;"
-        onkeydown="if(event.key==='Enter') ytSearch()">
-      <button class="btn btn-gold btn-sm" style="font-size:11px;" onclick="ytSearch()">🔍</button>
-    </div>
-
-    <!-- My Playlists -->
-    <div style="margin-bottom:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;">⭐ My Playlists</div>
-        <button class="btn btn-gold btn-sm" style="font-size:10px;padding:2px 8px;" onclick="toggleAddPlaylist()">+ Add</button>
-      </div>
-      <div id="yt-add-form" style="display:none;background:rgba(255,255,255,0.04);border-radius:6px;padding:8px;margin-bottom:8px;border:1px solid var(--div);">
-        <input class="fi" id="yt-new-name" placeholder="Name (e.g. My Gospel Mix)" style="font-size:11px;padding:4px 8px;margin-bottom:5px;">
-        <input class="fi" id="yt-new-url" placeholder="YouTube URL or search term" style="font-size:11px;padding:4px 8px;margin-bottom:6px;">
-        <div style="display:flex;gap:5px;">
-          <button class="btn btn-gold btn-sm" style="font-size:10px;" onclick="saveMyPlaylist()">💾 Save</button>
-          <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="toggleAddPlaylist()">Cancel</button>
-        </div>
-      </div>
-      <div id="yt-my-playlists" style="display:flex;flex-wrap:wrap;gap:4px;">
-        <div style="font-size:11px;color:var(--text3);font-style:italic;">No saved playlists — click + Add</div>
-      </div>
-    </div>
-
-    <!-- Quick Playlists -->
-    <div>
-      <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Quick Playlists</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;">
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('African American heritage music history')">🌍 AA Heritage</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('gospel music black church classics')">✝️ Gospel</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('soul R&B classics Motown')">🎵 Soul & R&B</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('blues classics BB King Muddy Waters')">🎸 Blues</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('focus study instrumental music')">🧠 Focus</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;" onclick="ytLoadSearch('African American history documentary')">📜 History</button>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- ═══ MODALS ═══ -->
 <div class="mo" id="mo-person">
@@ -5725,21 +5660,58 @@ function buildTreeSnapshot(){
   };
 }
 
-// Robust JSON extraction from an LLM reply (handles ```json fences + surrounding prose).
+// Robust JSON extraction from an LLM reply: handles ```json fences, surrounding
+// prose, braces inside string values (string-aware), AND truncated output (token
+// cap) by salvaging the partial object — closing open strings/brackets.
+function _jsonBalancedEnd(s){
+  let inStr=false, esc=false, depth=0;
+  for(let i=0;i<s.length;i++){ const c=s[i];
+    if(inStr){ if(esc) esc=false; else if(c==='\\') esc=true; else if(c==='"') inStr=false; continue; }
+    if(c==='"') inStr=true;
+    else if(c==='{'||c==='[') depth++;
+    else if(c==='}'||c===']'){ depth--; if(depth===0) return i; }
+  }
+  return -1;
+}
+function _jsonSalvage(s){
+  let inStr=false, esc=false; const stack=[];
+  for(let i=0;i<s.length;i++){ const c=s[i];
+    if(inStr){ if(esc) esc=false; else if(c==='\\') esc=true; else if(c==='"') inStr=false; continue; }
+    if(c==='"') inStr=true;
+    else if(c==='{') stack.push('}');
+    else if(c==='[') stack.push(']');
+    else if(c==='}'||c===']') stack.pop();
+  }
+  let t = s;
+  if(inStr) t += '"';                       // close a string cut mid-value
+  t = t.replace(/\s+$/,'');
+  t = t.replace(/,\s*"[^"]*"\s*:?\s*$/,''); // drop a dangling "key" / "key": with no value
+  t = t.replace(/:\s*$/,':null');           // key: with nothing -> null
+  t = t.replace(/,\s*$/,'');                 // drop trailing comma
+  let closed = t; for(let i=stack.length-1;i>=0;i--) closed += stack[i];
+  try { return JSON.parse(closed); } catch(e){}
+  // Last resort: trim to the last complete object and rebalance (keeps earlier candidates).
+  const lastObj = t.lastIndexOf('}');
+  if(lastObj>0){
+    let t2 = s.slice(0, lastObj+1), inS=false, es=false; const st2=[];
+    for(let i=0;i<t2.length;i++){ const c=t2[i];
+      if(inS){ if(es) es=false; else if(c==='\\') es=true; else if(c==='"') inS=false; continue; }
+      if(c==='"') inS=true; else if(c==='{') st2.push('}'); else if(c==='[') st2.push(']'); else if(c==='}'||c===']') st2.pop();
+    }
+    t2 = t2.replace(/,\s*$/,''); for(let i=st2.length-1;i>=0;i--) t2 += st2[i];
+    try { return JSON.parse(t2); } catch(e){}
+  }
+  return null;
+}
 function extractJSON(text){
   if(!text) return null;
-  let s = String(text).trim();
-  s = s.replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  let s = String(text).trim().replace(/^```(?:json)?/i,'').replace(/```\s*$/,'').trim();
   const start = s.indexOf('{');
   if(start<0) return null;
-  // find matching closing brace
-  let depth=0, end=-1;
-  for(let i=start;i<s.length;i++){
-    if(s[i]==='{') depth++;
-    else if(s[i]==='}'){ depth--; if(depth===0){ end=i; break; } }
-  }
-  if(end<0) return null;
-  try { return JSON.parse(s.slice(start, end+1)); } catch(e){ return null; }
+  s = s.slice(start);
+  const end = _jsonBalancedEnd(s);
+  if(end>=0){ try { return JSON.parse(s.slice(0, end+1)); } catch(e){ /* malformed → salvage */ } }
+  return _jsonSalvage(s);
 }
 
 function tlModeInstruction(mode, snap){
@@ -5755,7 +5727,8 @@ function tlModeInstruction(mode, snap){
 }
 
 const TL_SCHEMA_NOTE = `Return ONLY valid JSON, no prose, in exactly this shape:
-{"mode":"<mode>","summary":"...","candidates":[{"name":"...","line":"...","people":[{"name":"","birth":"","death":"","place":"","father":"","mother":"","spouse":"","line":"","occ":"","notes":"","speculative":false,"reason":""}],"startWith":{"person":"","why":""},"research":[{"task":"","repository":"","why":""}],"summary":""}]}`;
+{"mode":"<mode>","summary":"...","candidates":[{"name":"...","line":"...","people":[{"name":"","birth":"","death":"","place":"","father":"","mother":"","spouse":"","line":"","occ":"","notes":"","speculative":false,"reason":""}],"startWith":{"person":"","why":""},"research":[{"task":"","repository":"","why":""}],"summary":""}]}
+Keep strings concise (1-2 sentences each) and at most 6 research tasks per candidate so the JSON stays complete.`;
 
 // Multi-step loop: (1) plan/analyze with grounding, (2) synthesize strict JSON.
 async function runResearchLoop(mode, snap){
@@ -5785,7 +5758,7 @@ async function runResearchLoop(mode, snap){
       reply = await callAI([
         {role:'system', content: RR_TREE_LAB_PERSONA},
         {role:'user', content: `${tlModeInstruction(mode, snap)}\n\nPeople (JSON):\n${snapStr}${factsBlk}\n\nAnalysis so far:\n${analysis||'(none)'}\n\n${TL_SCHEMA_NOTE.replace('<mode>',mode)}${nudge}`}
-      ], {max_tokens: 4096});
+      ], {max_tokens: 8192});
       rawReply = reply || '';
     } catch(e){ lastErr = e; reply=''; }
     parsed = extractJSON(reply);
@@ -9652,7 +9625,7 @@ function populatePersonSelectors(){
     const sel=document.getElementById(s.id); if(!sel) return;
     const cur=sel.value;
     sel.innerHTML='<option value="">'+s.blank+'</option>';
-    people.forEach(function(p){
+    people.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).forEach(function(p){
       const o=document.createElement('option');
       o.value=p.name;
       o.textContent=p.name+(p.birth?' (b.'+p.birth+')':'')+(p.line?' ['+p.line.split(' ')[0]+']':'');
@@ -9674,6 +9647,28 @@ function compositeResetZoom(){
   compositeScale=1;
   const el=document.getElementById('composite-tree-display');
   if(el) el.style.transform='scale(1)';
+}
+
+// ── Pedigree zoom + full-screen (toolbar buttons) ──
+let pedScale=1;
+function pedApplyZoom(){
+  const svg=document.querySelector('#pedigree-tree svg');
+  if(svg){ svg.style.transformOrigin='top left'; svg.style.transform='scale('+pedScale+')'; }
+  const r=document.getElementById('ped-zoom-readout');
+  if(r) r.textContent=Math.round(pedScale*100)+'%';
+}
+function pedZoom(dir){
+  const step=0.15;
+  pedScale=Math.min(Math.max(pedScale + (dir>0?step:-step), 0.4), 2.5);
+  pedApplyZoom();
+}
+function pedZoomReset(){ pedScale=1; pedApplyZoom(); }
+
+// Full-screen / collapse the sidebar+chrome for tree views (CSS keys off body.tree-focus).
+function toggleTreeFocus(){
+  document.body.classList.toggle('tree-focus');
+  // Re-apply zoom after the layout reflow so the SVG scale survives the resize.
+  setTimeout(pedApplyZoom, 50);
 }
 
 // Drag to pan composite tree
@@ -10575,66 +10570,52 @@ function buildCompositeListSVG(sorted, lineColors, treeEl, mode){
 }
 
 
+let PED_ZOOM=1, PED_BASE_W=0, PED_BASE_H=0;
+
+function pedGenLabel(gen){
+  const base=['','You','Parents','Grandparents','Great-Grandparents'];
+  if(gen<base.length) return base[gen];
+  return (gen-3)+'× Gt-Grandparents';
+}
+
+function applyPedZoom(){
+  const svg=document.getElementById('ped-svg');
+  if(svg&&PED_BASE_W){ svg.style.width=(PED_BASE_W*PED_ZOOM)+'px'; svg.style.height=(PED_BASE_H*PED_ZOOM)+'px'; }
+  const r=document.getElementById('ped-zoom-readout'); if(r) r.textContent=Math.round(PED_ZOOM*100)+'%';
+}
+function pedZoom(dir){ PED_ZOOM=Math.max(0.15,Math.min(4, PED_ZOOM*(dir>0?1.25:0.8))); applyPedZoom(); }
+function pedZoomReset(){
+  const sc=document.getElementById('ped-scroll');
+  if(sc&&PED_BASE_W){ PED_ZOOM=Math.max(0.15,Math.min(2,(sc.clientWidth-16)/PED_BASE_W)); } else { PED_ZOOM=1; }
+  applyPedZoom();
+}
+function toggleTreeFocus(){
+  document.body.classList.toggle('tree-focus');
+  if(document.getElementById('ped-scroll')) buildPedigreeTree();
+}
+
 function buildPedigreeTree(){
   const el = document.getElementById('pedigree-tree');
   if(!el) return;
-
-  // Populate person selector
   populatePersonSelectors();
 
   if(!people.length){
+    el.style.height='auto'; el.style.overflow='visible';
     el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);">Upload a GEDCOM or add people to see the pedigree chart.</div>';
     return;
   }
 
-  // Get selected root person from type-ahead input
+  const depthSel=document.getElementById('pedigree-depth');
+  const MAXGEN=Math.max(2, Math.min(10, parseInt(depthSel&&depthSel.value,10)||10));
+
+  // Root person from type-ahead, else focus person, else first person
   const selVal=pedigreeRootName||((document.getElementById('pedigree-root-input')||{}).value||'');
   const focus=selVal?people.find(p=>p.name===selVal):people.find(p=>p.focus)||people[0];
 
-  // Build name → person lookup
   const byName={};
   people.forEach(p=>{ byName[p.name]=p; });
 
-  // Build 5-generation pedigree structure
-  // Each slot: gen(1-5), position(0-based in gen), person or null
-  function getGen(p, gen, slots){
-    if(!p||gen>5) return;
-    const pos=slots.length;
-    slots.push({gen, p, pos});
-    if(gen<5){
-      const father=p.father?byName[p.father]:null;
-      const mother=p.mother?byName[p.mother]:null;
-      getGen(father, gen+1, slots);
-      getGen(mother, gen+1, slots);
-    }
-  }
-
-  // Lay out as proper Ancestry-style horizontal pedigree
-  // Gen 1 = you (right), Gen 5 = great-great-grandparents (left)
-  // Standard box size
-  const BOX_W=160, BOX_H=52, H_GAP=40, V_GAP=12;
-
-  // Calculate positions for each generation
-  function buildPositions(){
-    // Gen positions: gen 1 has 1 person, gen2=2, gen3=4, gen4=8, gen5=16
-    const positions=[];
-    let maxGen=5;
-    let totalH=Math.pow(2,maxGen-1)*(BOX_H+V_GAP);
-
-    for(let gen=1;gen<=maxGen;gen++){
-      const count=Math.pow(2,gen-1);
-      const spacing=totalH/count;
-      for(let i=0;i<count;i++){
-        const x=(maxGen-gen)*(BOX_W+H_GAP);
-        const y=i*spacing+spacing/2-BOX_H/2;
-        positions.push({gen,idx:i,x,y});
-      }
-    }
-    return{positions,totalH,totalW:maxGen*(BOX_W+H_GAP)};
-  }
-
-  // Get person for gen+idx using Ahnentafel numbering
-  // 1=focus, 2=father, 3=mother, 4=paternal GF, 5=paternal GM, etc
+  // Ahnentafel: 1=focus, 2=father, 3=mother, 2n=father-of-n, 2n+1=mother-of-n
   function getAhnentafel(n){
     if(n===1) return focus;
     const parent=getAhnentafel(Math.floor(n/2));
@@ -10643,9 +10624,10 @@ function buildPedigreeTree(){
     else         return parent.mother?byName[parent.mother]:null;
   }
 
-  const{positions,totalH,totalW}=buildPositions();
-  const svgH=Math.max(totalH, 500);
-  const svgW=totalW+BOX_W+20;
+  const BOX_W=160, BOX_H=52, H_GAP=40, V_GAP=12;
+  const leaves=Math.pow(2,MAXGEN-1);
+  const svgH=leaves*(BOX_H+V_GAP);
+  const svgW=MAXGEN*(BOX_W+H_GAP)+20;
 
   const lineColors={
     'Foreman / Drewitt (Lawson)':'#c47a2a',
@@ -10655,53 +10637,39 @@ function buildPedigreeTree(){
     'Composite':'#c4a400'
   };
 
-  // Build SVG
-  let svgLines='', svgBoxes='';
-  const ns='http://www.w3.org/2000/svg';
-  const boxMap={};  // ahnentafel# → {x,y}
-
-  // Map Ahnentafel numbers to positions
-  // Gen1=pos0, Gen2=[pos0,pos1] etc
-  for(let gen=1;gen<=5;gen++){
+  // Position every slot (Gen 1 on the right, ancestors fanning left)
+  const boxMap={};
+  for(let gen=1;gen<=MAXGEN;gen++){
     const count=Math.pow(2,gen-1);
     const spacing=svgH/count;
     for(let i=0;i<count;i++){
       const ahn=Math.pow(2,gen-1)+i;
-      const x=(5-gen)*(BOX_W+H_GAP)+10;
+      const x=(MAXGEN-gen)*(BOX_W+H_GAP)+10;
       const y=i*spacing+spacing/2-BOX_H/2;
       boxMap[ahn]={x,y};
     }
   }
 
-  // Draw connecting lines first
-  for(let gen=1;gen<=4;gen++){
+  // Connectors
+  let svgLines='';
+  for(let gen=1;gen<MAXGEN;gen++){
     const count=Math.pow(2,gen-1);
     for(let i=0;i<count;i++){
       const ahn=Math.pow(2,gen-1)+i;
-      const fatherAhn=ahn*2;
-      const motherAhn=ahn*2+1;
-      const cur=boxMap[ahn];
-      const fa=boxMap[fatherAhn];
-      const mo=boxMap[motherAhn];
+      const cur=boxMap[ahn], fa=boxMap[ahn*2], mo=boxMap[ahn*2+1];
       if(cur&&fa&&mo){
-        const x1=cur.x;
-        const midX=cur.x-H_GAP/2;
-        const cy=cur.y+BOX_H/2;
-        const fy=fa.y+BOX_H/2;
-        const my=mo.y+BOX_H/2;
-        // Horizontal line from current box left edge to midpoint
+        const x1=cur.x, midX=cur.x-H_GAP/2, cy=cur.y+BOX_H/2, fy=fa.y+BOX_H/2, my=mo.y+BOX_H/2;
         svgLines+=`<line x1="${x1}" y1="${cy}" x2="${midX}" y2="${cy}" stroke="#444" stroke-width="1.5"/>`;
-        // Vertical line connecting father and mother at midpoint
         svgLines+=`<line x1="${midX}" y1="${fy}" x2="${midX}" y2="${my}" stroke="#444" stroke-width="1.5"/>`;
-        // Horizontal lines to father and mother boxes
         svgLines+=`<line x1="${midX}" y1="${fy}" x2="${fa.x+BOX_W}" y2="${fy}" stroke="#444" stroke-width="1.5"/>`;
         svgLines+=`<line x1="${midX}" y1="${my}" x2="${mo.x+BOX_W}" y2="${my}" stroke="#444" stroke-width="1.5"/>`;
       }
     }
   }
 
-  // Draw boxes
-  for(let ahn=1;ahn<=Math.pow(2,5)-1;ahn++){
+  // Boxes
+  let svgBoxes='';
+  for(let ahn=1;ahn<=Math.pow(2,MAXGEN)-1;ahn++){
     const pos=boxMap[ahn]; if(!pos) continue;
     const p=getAhnentafel(ahn);
     const{x,y}=pos;
@@ -10710,9 +10678,7 @@ function buildPedigreeTree(){
     const fill=isYou?'#7a1a2e':p?'#1e0810':'#15050c';
     const stroke=isYou?'#d4a843':col;
     const nameText=p?(p.name.length>20?p.name.substring(0,18)+'…':p.name):(ahn===1?'You':'Unknown');
-    const dateText=p?[(p.birth?'b.'+p.birth.replace(/\s+/g,'').substring(0,8):''),(p.death?'d.'+p.death.replace(/\s+/g,'').substring(0,8):'')].filter(Boolean).join(' '):'' ;
-    const genLabel=['','You','Parents','Grandparents','Great-Grandparents','2x Great-Grandparents'];
-
+    const dateText=p?[(p.birth?'b.'+p.birth.replace(/\s+/g,'').substring(0,8):''),(p.death?'d.'+p.death.replace(/\s+/g,'').substring(0,8):'')].filter(Boolean).join(' '):'';
     svgBoxes+=`<g class="ped-node" onclick="handlePedigreeClick(${ahn})" style="cursor:pointer;">
       <rect x="${x}" y="${y}" width="${BOX_W}" height="${BOX_H}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${isYou?2:1.5}" opacity="0.95"/>
       ${p?`<rect x="${x}" y="${y}" width="4" height="${BOX_H}" rx="2" fill="${col}" opacity="0.9"/>`:'' }
@@ -10723,28 +10689,33 @@ function buildPedigreeTree(){
     </g>`;
   }
 
-  // Generation labels at top
+  // Generation labels along the top
   let genLabels='';
-  const genLabelNames=['','You','Parents','Grandparents','Great-Grandparents','2xGt-Grandparents'];
-  for(let gen=1;gen<=5;gen++){
-    const x=(5-gen)*(BOX_W+H_GAP)+10+BOX_W/2;
-    genLabels+=`<text x="${x}" y="14" text-anchor="middle" font-size="9" fill="#555" font-family="Arial">${genLabelNames[gen]||''}</text>`;
+  for(let gen=1;gen<=MAXGEN;gen++){
+    const x=(MAXGEN-gen)*(BOX_W+H_GAP)+10+BOX_W/2;
+    genLabels+=`<text x="${x}" y="14" text-anchor="middle" font-size="9" fill="#777" font-family="Arial">${pedGenLabel(gen)}</text>`;
   }
 
-  el.innerHTML=`<div style="overflow-x:auto;overflow-y:auto;">
-    <svg viewBox="0 0 ${svgW} ${svgH+20}" xmlns="http://www.w3.org/2000/svg" style="min-width:${svgW}px;height:${Math.min(svgH+20,700)}px;display:block;">
-      <rect width="${svgW}" height="${svgH+20}" fill="#0d0305" rx="8"/>
-      ${genLabels}
-      <g transform="translate(0,20)">
-        ${svgLines}
-        ${svgBoxes}
-      </g>
-    </svg>
-  </div>
-  <div style="font-size:11px;color:var(--text3);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;">
-    ${Object.entries(lineColors).map(([l,c])=>`<span><span style="display:inline-block;width:10px;height:10px;background:${c};border-radius:2px;margin-right:4px;vertical-align:middle;"></span>${l.split(' ')[0]}</span>`).join('')}
-    <span style="color:var(--text3);">Click any box to view person details</span>
-  </div>`;
+  PED_BASE_W=svgW; PED_BASE_H=svgH+20;
+  const scrollH=document.body.classList.contains('tree-focus')?'calc(100vh - 120px)':'68vh';
+
+  el.style.height='auto'; el.style.overflow='visible';
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+      ${Object.entries(lineColors).map(([l,c])=>`<span><span style="display:inline-block;width:10px;height:10px;background:${c};border-radius:2px;margin-right:4px;vertical-align:middle;"></span>${l.split(' ')[0]}</span>`).join('')}
+      <span>${MAXGEN} generations · scroll to pan · −/+ to zoom · click a box to open</span>
+    </div>
+    <div id="ped-scroll" style="overflow:auto;height:${scrollH};border-radius:8px;background:#0d0305;border:1px solid var(--div);">
+      <svg id="ped-svg" viewBox="0 0 ${svgW} ${svgH+20}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:${svgW*PED_ZOOM}px;height:${(svgH+20)*PED_ZOOM}px;">
+        <rect width="${svgW}" height="${svgH+20}" fill="#0d0305" rx="8"/>
+        ${genLabels}
+        <g transform="translate(0,20)">
+          ${svgLines}
+          ${svgBoxes}
+        </g>
+      </svg>
+    </div>`;
+  applyPedZoom();
 }
 
 function handlePedigreeClick(ahn){
@@ -11453,230 +11424,6 @@ function refreshProgress(){
 }
 
 
-let musicPlayerExpanded=false;
-
-function toggleMusicPlayer(){
-  musicPlayerExpanded=!musicPlayerExpanded;
-  const panel=document.getElementById('music-panel');
-  const icon=document.getElementById('music-toggle-icon');
-  const player=document.getElementById('music-player');
-  if(panel) panel.style.display=musicPlayerExpanded?'block':'none';
-  if(icon) icon.textContent=musicPlayerExpanded?'▼':'▲';
-  if(player) player.style.width=musicPlayerExpanded?'340px':'320px';
-  if(musicPlayerExpanded) renderMyPlaylists();
-}
-
-// Drag-to-move music player
-(function(){
-  let dragging=false, startX=0, startY=0, origRight=0, origBottom=0;
-  const getPlayer=()=>document.getElementById('music-player');
-  const getHandle=()=>document.getElementById('music-drag-handle');
-
-  document.addEventListener('mousedown',function(e){
-    const handle=getHandle();
-    const player=getPlayer();
-    if(!handle||!player||!handle.contains(e.target)) return;
-    // Don't drag if clicking a button
-    if(e.target.tagName==='BUTTON'||e.target.closest('button')) return;
-    dragging=true;
-    startX=e.clientX; startY=e.clientY;
-    const rect=player.getBoundingClientRect();
-    origRight=window.innerWidth-rect.right;
-    origBottom=window.innerHeight-rect.bottom;
-    player.style.transition='none';
-    handle.style.cursor='grabbing';
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove',function(e){
-    if(!dragging) return;
-    const player=getPlayer(); if(!player) return;
-    const dx=e.clientX-startX;
-    const dy=e.clientY-startY;
-    const newRight=Math.max(0,Math.min(window.innerWidth-100, origRight-dx));
-    const newBottom=Math.max(0,Math.min(window.innerHeight-40, origBottom-dy));
-    player.style.right=newRight+'px';
-    player.style.bottom=newBottom+'px';
-    player.style.left='auto';
-    player.style.top='auto';
-  });
-
-  document.addEventListener('mouseup',function(){
-    if(!dragging) return;
-    dragging=false;
-    const player=getPlayer();
-    const handle=getHandle();
-    if(player) player.style.transition='box-shadow .2s';
-    if(handle) handle.style.cursor='grab';
-    // Save position
-    if(player){
-      localStorage.setItem('rr_music_pos',JSON.stringify({right:player.style.right,bottom:player.style.bottom}));
-    }
-  });
-
-  // Restore saved position on load
-  document.addEventListener('DOMContentLoaded',function(){
-    setTimeout(function(){
-      const pos=localStorage.getItem('rr_music_pos');
-      if(pos){
-        try{
-          const{right,bottom}=JSON.parse(pos);
-          const player=getPlayer();
-          if(player){ player.style.right=right; player.style.bottom=bottom; player.style.left='auto'; player.style.top='auto'; }
-        }catch(e){}
-      }
-    },500);
-  });
-})();
-
-// ═══════════════════════════════════════════════
-//  YOUTUBE MUSIC PLAYER
-// ═══════════════════════════════════════════════
-let ytPlaying=false;
-let ytMuted=false;
-let myPlaylists=JSON.parse(localStorage.getItem('rr_playlists')||'[]');
-
-function ytGetFrame(){ return document.getElementById('yt-player'); }
-
-function ytExtractId(url){
-  // Extract playlist ID or video ID from YouTube URL
-  if(!url) return {type:'search',value:url};
-  url=url.trim();
-  // Playlist URL
-  const plMatch=url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-  if(plMatch) return {type:'playlist',value:plMatch[1]};
-  // Video URL
-  const vMatch=url.match(/(?:youtu\.be\/|v=|embed\/)([a-zA-Z0-9_-]{11})/);
-  if(vMatch) return {type:'video',value:vMatch[1]};
-  // Just an ID
-  if(/^[a-zA-Z0-9_-]{11}$/.test(url)) return {type:'video',value:url};
-  if(/^[a-zA-Z0-9_-]{18,}$/.test(url)) return {type:'playlist',value:url};
-  // Search term
-  return {type:'search',value:url};
-}
-
-function ytLoadPlaylist(playlistId, name){
-  const frame=ytGetFrame(); if(!frame) return;
-  // Use nocookie domain and proper parameters
-  frame.src='https://www.youtube-nocookie.com/embed/videoseries?list='+playlistId+'&autoplay=1&rel=0&modestbranding=1';
-  ytPlaying=true;
-  const btn=document.getElementById('yt-playpause-btn');
-  if(btn) btn.textContent='⏸';
-  const np=document.getElementById('yt-now-playing');
-  if(np) np.textContent='▶ Now Playing: '+name;
-  showToast('🎵 Playing: '+name);
-}
-
-function ytLoadSearch(query){
-  const frame=ytGetFrame(); if(!frame) return;
-  // YouTube search embed via listType=search still works for some queries
-  // Use nocookie domain for better compatibility
-  frame.src='https://www.youtube-nocookie.com/embed?listType=search&list='+encodeURIComponent(query)+'&autoplay=1&rel=0';
-  ytPlaying=true;
-  const btn=document.getElementById('yt-playpause-btn');
-  if(btn) btn.textContent='⏸';
-  const np=document.getElementById('yt-now-playing');
-  if(np) np.textContent='🔍 '+query;
-  showToast('🔍 Searching: '+query);
-}
-
-function ytLoadVideo(videoId, name){
-  const frame=ytGetFrame(); if(!frame) return;
-  frame.src='https://www.youtube-nocookie.com/embed/'+videoId+'?autoplay=1&rel=0&modestbranding=1';
-  ytPlaying=true;
-  const btn=document.getElementById('yt-playpause-btn');
-  if(btn) btn.textContent='⏸';
-  const np=document.getElementById('yt-now-playing');
-  if(np) np.textContent='▶ Now Playing: '+name;
-}
-
-function ytPlayFromSaved(pl){
-  const parsed=ytExtractId(pl.url);
-  if(parsed.type==='playlist') ytLoadPlaylist(parsed.value, pl.name);
-  else if(parsed.type==='video') ytLoadVideo(parsed.value, pl.name);
-  else ytLoadSearch(pl.url||pl.name);
-  showToast('🎵 Playing: '+pl.name);
-}
-
-function ytSearch(){
-  const q=document.getElementById('yt-search')?.value.trim();
-  if(!q){showToast('Enter something to search for.');return;}
-  ytLoadSearch(q);
-}
-
-function ytPlayPause(){
-  const frame=ytGetFrame(); if(!frame||!frame.src||frame.src==='about:blank'){
-    showToast('Select a playlist first.'); return;
-  }
-  const btn=document.getElementById('yt-playpause-btn');
-  if(ytPlaying){
-    frame.src=frame.src.replace('autoplay=1','autoplay=0');
-    ytPlaying=false;
-    if(btn) btn.textContent='▶ Play';
-  } else {
-    frame.src=frame.src.replace('autoplay=0','autoplay=1');
-    ytPlaying=true;
-    if(btn) btn.textContent='⏸ Pause';
-  }
-}
-
-function ytToggleMute(){
-  ytMuted=!ytMuted;
-  const btn=document.getElementById('yt-mute-btn');
-  const frame=ytGetFrame();
-  if(frame&&frame.contentWindow){
-    frame.contentWindow.postMessage(JSON.stringify({event:'command',func:ytMuted?'mute':'unMute'}),'*');
-  }
-  if(btn) btn.textContent=ytMuted?'🔇':'🔊';
-  showToast(ytMuted?'🔇 Muted':'🔊 Unmuted');
-}
-
-function ytNext(){ showToast('Use the ⏭ control inside the video player to skip.'); }
-function ytPrev(){ showToast('Use the ⏮ control inside the video player to go back.'); }
-
-function toggleAddPlaylist(){
-  const form=document.getElementById('yt-add-form');
-  if(form) form.style.display=form.style.display==='none'?'block':'none';
-}
-
-function saveMyPlaylist(){
-  const name=document.getElementById('yt-new-name')?.value.trim();
-  const url=document.getElementById('yt-new-url')?.value.trim();
-  if(!name||!url){showToast('Enter both a name and a URL or search term.');return;}
-  myPlaylists.push({name, url, id:Date.now()});
-  localStorage.setItem('rr_playlists', JSON.stringify(myPlaylists));
-  document.getElementById('yt-new-name').value='';
-  document.getElementById('yt-new-url').value='';
-  toggleAddPlaylist();
-  renderMyPlaylists();
-  showToast('💾 Playlist saved: '+name);
-}
-
-function deleteMyPlaylist(id){
-  myPlaylists=myPlaylists.filter(p=>p.id!==id);
-  localStorage.setItem('rr_playlists', JSON.stringify(myPlaylists));
-  renderMyPlaylists();
-  showToast('🗑️ Playlist removed');
-}
-
-function renderMyPlaylists(){
-  const el=document.getElementById('yt-my-playlists');
-  if(!el) return;
-  if(!myPlaylists.length){
-    el.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic;">No saved playlists yet — add one above or use a quick playlist below</div>';
-    return;
-  }
-  el.innerHTML=myPlaylists.map(pl=>`
-    <div style="display:flex;align-items:center;gap:4px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.25);border-radius:6px;padding:4px 8px;">
-      <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px;" onclick="ytPlayFromSaved(${JSON.stringify(pl).replace(/"/g,'&quot;')})">▶ ${pl.name}</button>
-      <button style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:2px 4px;" onclick="deleteMyPlaylist(${pl.id})" title="Remove">✕</button>
-    </div>`).join('');
-}
-
-// Load saved playlists on startup
-document.addEventListener('DOMContentLoaded', function(){
-  setTimeout(renderMyPlaylists, 500);
-});
 
 
 
@@ -11773,7 +11520,7 @@ const _navExtensions = {
   quotes:       ()=>{
     renderSavedQuotesList();
     const sel = document.getElementById('quote-person-sel');
-    if(sel){ sel.innerHTML='<option value="">-- Choose from your tree --</option>'; people.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name+' ('+( p.line||'Composite')+')'; sel.appendChild(o); }); }
+    if(sel){ sel.innerHTML='<option value="">-- Choose from your tree --</option>'; people.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name+' ('+( p.line||'Composite')+')'; sel.appendChild(o); }); }
   },
   settings:     ()=>{
     const el = document.getElementById('autosave-status');
